@@ -1,0 +1,278 @@
+---
+title: "Frequently Asked Questions"
+description: "Common questions about Kyber and Star Wars Battlefront II private servers"
+icon: "circle-question"
+---
+
+## General Questions
+
+<AccordionGroup>
+  <Accordion title="What is Kyber?">
+    Kyber is an open-source private server tool for Star Wars Battlefront II (2017) that allows players to:
+    - Host and join custom servers
+    - Use mods and custom content
+    - Play with proximity voice chat
+    - Access official and community servers
+    - Create custom map rotations and game modes
+  </Accordion>
+
+  <Accordion title="Is Kyber free to use?">
+    Yes, Kyber is completely free and open-source. However, Patreon supporters get access to premium features like:
+    - Custom launcher backgrounds
+    - Custom primary colors
+    - Automatic Discord linking
+    - Priority support
+  </Accordion>
+
+  <Accordion title="Do I need to own Star Wars Battlefront II?">
+    Yes, you must own a legitimate copy of Star Wars Battlefront II (2017) on PC through Origin/EA App to use Kyber.
+  </Accordion>
+
+  <Accordion title="Will I get banned for using Kyber?">
+    Kyber does not modify EA's official servers and operates as a separate private server system. However, use at your own discretion. We recommend checking EA's terms of service.
+  </Accordion>
+</AccordionGroup>
+
+## Installation & Setup
+
+<AccordionGroup>
+  <Accordion title="What are the system requirements?">
+    Kyber requires:
+    - Windows 7 or later (Windows 10/11 recommended)
+    - Star Wars Battlefront II (2017) installed
+    - Active EA account
+    - Internet connection for multiplayer
+    
+    <Note>
+      Windows 7 Compatibility Mode is no longer needed as of version 2.0.0-beta5.
+    </Note>
+  </Accordion>
+
+  <Accordion title="How do I install Kyber?">
+    1. Download the latest installer from [kyber.gg](https://kyber.gg)
+    2. Run the installer and follow the setup wizard
+    3. Log in with your EA account
+    4. Configure your game path and mod directory
+    5. You're ready to play!
+    
+    For detailed instructions, see the [Installation Guide](/installation).
+  </Accordion>
+
+  <Accordion title="Where should I install my mods?">
+    During setup, you'll choose a mods directory. We recommend:
+    - Using a path without special characters
+    - Avoiding non-ASCII characters in the path
+    - Not using OneDrive or cloud-synced folders
+    
+    <Warning>
+      As of version 2.0.0-beta9, the Module path has been moved to `C:\ProgramData\Kyber\Module` to prevent issues with non-ASCII characters.
+    </Warning>
+  </Accordion>
+
+  <Accordion title="How do I link my Patreon account?">
+    1. Open the Kyber launcher
+    2. Click your profile in the top right
+    3. Go to **Settings**
+    4. Click **Link Patreon Account**
+    5. Follow the authentication flow
+    
+    After logging in, Patreon supporters will have their Discord account linked automatically.
+  </Accordion>
+</AccordionGroup>
+
+## Mods & Collections
+
+<AccordionGroup>
+  <Accordion title="Where can I download mods?">
+    You can download mods directly through the Kyber launcher:
+    - Browse mods in the **Mod Browser** tab
+    - Log in with your Nexus Mods account for automatic downloads
+    - Nexus Mods Premium users get faster download speeds
+    - You can also drag and drop mod files or Nexus Mods links into the launcher
+  </Accordion>
+
+  <Accordion title="What file formats are supported?">
+    Kyber supports:
+    - `.zip` files (with extraction progress)
+    - `.rar` files (with extraction progress)
+    - `.7z` files (without progress indicator)
+    - Frosty mod packs (import via Settings)
+    - BetterSabers plugin files
+  </Accordion>
+
+  <Accordion title="How many mods can I use?">
+    <Warning>
+      The launcher displays a warning when trying to use more than 247 mods. Using more may cause stability issues.
+    </Warning>
+    
+    For best performance:
+    - Use mod collections to organize your mods
+    - The launcher warns when multiple big mod packs are used together
+    - Create separate collections for different playstyles
+  </Accordion>
+
+  <Accordion title="What's the difference between gameplay and cosmetic mods?">
+    - **Gameplay mods**: Affect game mechanics, maps, or modes. Required to join servers using them.
+    - **Cosmetic mods**: Only change visuals. Not required to join servers.
+    
+    You can filter mods by type in the Mod Browser using the filter options.
+  </Accordion>
+
+  <Accordion title="Can I import my Frosty mod collections?">
+    Yes! Go to **Settings** and click **Import From Frosty** to import your existing Frosty mod packs.
+    
+    Frosty collection screenshots will be displayed when inspecting them.
+  </Accordion>
+</AccordionGroup>
+
+## Servers & Multiplayer
+
+<AccordionGroup>
+  <Accordion title="How do I join a server?">
+    1. Open the **Play** tab in the launcher
+    2. Browse the server list
+    3. Click on a server to view details
+    4. Click **Join** to connect
+    
+    The launcher will automatically download required gameplay mods for you.
+  </Accordion>
+
+  <Accordion title="What are server groups?">
+    Server groups allow multiple instances of the same server:
+    - Official servers are grouped together
+    - When joining, the most popular instance is selected by default
+    - You can manually select a specific instance in the join dialog
+    - All instances share the same configuration and mods
+  </Accordion>
+
+  <Accordion title="How do I host my own server?">
+    1. Go to the **Host** tab
+    2. Configure your server settings
+    3. Set up map rotation using the builder
+    4. Choose your mod collection
+    5. Set a password (optional)
+    6. Click **Start Server**
+    
+    For detailed hosting instructions, see the [Server Hosting Guide](/guides/hosting-servers).
+  </Accordion>
+
+  <Accordion title="Can I create custom map rotations?">
+    Yes! The map rotation builder supports:
+    - All official maps and modes
+    - Custom maps and modes from mods (if they implement the new format)
+    - JSON file imports
+    - Shuffle, undo, redo, and clear functions
+    - Auto-save by pressing Enter
+  </Accordion>
+
+  <Accordion title="How does proximity voice chat work?">
+    Proximity voice chat allows you to talk to nearby players in-game:
+    - Enable it in **Settings** > **Voice Chat**
+    - Choose your input/output devices
+    - Use push-to-talk or voice activation
+    - Ingame icons show who's speaking
+    - Press **INSERT** to open the in-game panel
+    
+    <Note>
+      Proximity voice chat was fixed and enhanced in version 2.0.0-beta7.
+    </Note>
+  </Accordion>
+</AccordionGroup>
+
+## Stats & Progression
+
+<AccordionGroup>
+  <Accordion title="Do stats carry over from EA servers?">
+    No, Kyber servers maintain separate progression and statistics from EA's official servers.
+  </Accordion>
+
+  <Accordion title="Where can I view my stats?">
+    Click the **Stats** tab in the launcher to view:
+    - Your performance statistics
+    - Match history
+    - Player rankings
+    - Detailed analytics
+  </Accordion>
+
+  <Accordion title="Will my EA username update on Kyber?">
+    Yes, but it may take time:
+    - Username changes can take up to 7 days to update on Kyber
+    - The system checks periodically for changes
+    - This issue was improved in version 2.0.0-beta7
+  </Accordion>
+</AccordionGroup>
+
+## Moderation & Reports
+
+<AccordionGroup>
+  <Accordion title="How do I report a player?">
+    To report a user:
+    1. Open the launcher while in-game (press **INSERT**)
+    2. Hover over the user you want to report
+    3. Click the **Report** button
+    
+    To report someone not in your server:
+    1. Click your profile in the top right
+    2. Search for the user
+    3. Click **Report**
+  </Accordion>
+
+  <Accordion title="How do I promote someone to moderator on my server?">
+    As a server host:
+    1. Press **INSERT** to open the in-game panel
+    2. Find the player in the player list
+    3. Click **Promote to Moderator**
+    
+    The launcher now displays usernames for punishments and moderators.
+  </Accordion>
+
+  <Accordion title="What moderation powers do moderators have?">
+    Server moderators can:
+    - Kick players
+    - Ban players
+    - Manage punishments
+    - Access the moderation panel in-game
+  </Accordion>
+</AccordionGroup>
+
+## Technical Questions
+
+<AccordionGroup>
+  <Accordion title="Why is HDR disabled?">
+    As of version 2.0.0-beta8, HDR is forced to be disabled due to compatibility issues with the Kyber module.
+  </Accordion>
+
+  <Accordion title="Where are my settings saved?">
+    Kyber settings are stored in:
+    - `%appdata%\ArmchairDevelopers\Kyber`
+    - Module path: `C:\ProgramData\Kyber\Module`
+    - Mod browser cache: System temp folder
+    
+    Cloud Sync has been fixed, so your Battlefront 2 settings won't reset after every game start.
+  </Accordion>
+
+  <Accordion title="How do I export logs for bug reports?">
+    Press `Ctrl + Alt + Space` to export logs.
+    
+    Share these logs when reporting issues on the [Discord server](https://discord.gg/kyber).
+  </Accordion>
+
+  <Accordion title="What is Maxima?">
+    Maxima is the game launcher component of Kyber that:
+    - Starts the game with mods loaded
+    - Manages game sessions
+    - Handles EA authentication
+    - Provides improved error messages
+  </Accordion>
+</AccordionGroup>
+
+## Getting Help
+
+<Note>
+  Still have questions? Join our community:
+  - [Discord Server](https://discord.gg/kyber)
+  - [Twitter/X](https://x.com/KyberServers)
+  - [GitHub Discussions](https://github.com/ArmchairDevelopers/Kyber)
+</Note>
+
+For troubleshooting common issues, see the [Troubleshooting Guide](/community/troubleshooting).

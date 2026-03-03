@@ -1,0 +1,576 @@
+---
+title: CLI
+description: Command-line interface for server management and game launching
+icon: terminal
+---
+
+The KYBER CLI is a powerful Dart-based command-line tool that provides headless server hosting, game launching, and administrative functions for the KYBER platform.
+
+## Overview
+
+The CLI enables users to:
+- Host dedicated game servers without a GUI
+- Launch the game with custom configurations
+- Manage authentication and tokens
+- Download and verify game files
+- Automate server deployment and management
+
+<Info>
+  The CLI is the preferred tool for dedicated server hosting and automation scenarios.
+</Info>
+
+## Tech Stack
+
+<CardGroup cols={2}>
+  <Card title="Language" icon="code">
+    Dart SDK 3.10+
+  </Card>
+  <Card title="FFI Bridge" icon="link">
+    Rust via flutter_rust_bridge
+  </Card>
+  <Card title="CLI Framework" icon="terminal">
+    args + cli_completion
+  </Card>
+  <Card title="RPC" icon="arrows-rotate">
+    gRPC client
+  </Card>
+</CardGroup>
+
+### Key Dependencies
+
+```yaml pubspec.yaml
+name: kyber_cli
+version: 2.0.0-beta9+1
+
+environment:
+  sdk: ">=3.10.1 <4.0.0"
+
+dependencies:
+  args: ^2.4.1                # CLI argument parsing
+  cli_completion: ^0.5.0      # Shell completion
+  mason_logger: ^0.3.0        # Structured logging
+  dio: ^5.4.0                 # HTTP client
+  grpc: ^5.0.0                # gRPC client
+  flutter_rust_bridge: ^2.11  # Rust FFI
+  sentry: ^9.7.0              # Error tracking
+  kyber:                      # Shared KYBER package
+    path: ../Packages/kyber
+  kyber_collection:           # Collection utilities
+    path: ../Packages/kyber_collection
+
+executables:
+  kyber_cli:
+```
+
+## Architecture
+
+The CLI uses a command pattern with isolated command handlers:
+
+```
+lib/
+├── commands/
+│   ├── start_server_command.dart    # Host dedicated server
+│   ├── start_game.dart              # Launch game client
+│   ├── get_token.dart               # Get KYBER auth token
+│   ├── get_ea_token.dart            # Get EA auth token
+│   └── download_game.dart           # Download game files
+├── models/
+│   └── maxima_instance.dart         # Maxima backend model
+├── utils/
+│   ├── api_service.dart             # API client
+│   ├── env_helper.dart              # Environment configuration
+│   └── collection_helper.dart       # Data utilities
+└── command_runner.dart              # Main CLI runner
+```
+
+### Entry Point
+
+<CodeGroup>
+
+```dart bin/kyber_cli.dart
+import 'dart:async';
+import 'dart:io';
+
+import 'package:kyber_cli/command_runner.dart';
+import 'package:kyber_cli/gen/frb_generated.dart';
+import 'package:sentry/sentry.dart';
+
+Future<void> main(List<String> args) async {
+  // Initialize Rust FFI bindings
+  await RustLib.init();
+  
+  await runZonedGuarded(() async {
+    // Initialize error tracking
+    await Sentry.init((options) {
+      options.dsn = 'https://6908d6215588b605347d1d446f0bb5ce@sentry.kyber.gg/5';
+    });
+    
+    // Run CLI command
+    await _flushThenExit(await KyberCliCommandRunner().run(args));
+  }, (exception, stackTrace) async {
+    await Sentry.captureException(exception, stackTrace: stackTrace);
+    print('Error: $exception');
+    exit(1);
+  });
+}
+
+Future<void> _flushThenExit(int status) {
+  return Future.wait<void>([
+    stdout.close(),
+    stderr.close(),
+  ]).then<void>((_) => exit(status));
+}
+```
+
+```dart lib/command_runner.dart
+import 'package:args/command_runner.dart';
+import 'package:cli_completion/cli_completion.dart';
+import 'package:mason_logger/mason_logger.dart';
+
+class KyberCliCommandRunner extends CompletionCommandRunner<int> {
+  KyberCliCommandRunner({Logger? logger}) 
+      : super('kyber_cli', 'A CLI for Kyber.') {
+    
+    _logger = logger ?? Logger();
+    
+    // Add global flags
+    argParser
+      ..addFlag('version', negatable: false, help: 'Print version.')
+      ..addFlag('verbose', abbr: 'v', help: 'Verbose logging.')
+      ..addFlag('debug', help: 'Enable debug mode.');
+    
+    // Register commands
+    addCommand(StartServerCommand(logger: _logger));
+    addCommand(StartGameCommand(logger: _logger));
+    addCommand(GetTokenCommand(logger: _logger));
+    addCommand(GetEATokenCommand(logger: _logger));
+    addCommand(SetupServerCommand(logger: _logger));
+  }
+  
+  late Logger _logger;
+  
+  @override
+  Future<int> run(Iterable<String> args) async {
+    try {
+      final results = parse(args);
+      
+      if (results['verbose'] == true) {
+        _logger.level = Level.verbose;
+      }
+      
+      if (results['version'] == true) {
+        _logger.info('kyber_cli version: 2.0.0-beta9+1');
+        return ExitCode.success.code;
+      }
+      
+      return await runCommand(results) ?? ExitCode.success.code;
+    } catch (e) {
+      _logger.err(e.toString());
+      return ExitCode.software.code;
+    }
+  }
+}
+```
+
+</CodeGroup>
+
+## Commands
+
+### Start Server
+
+Host a dedicated game server:
+
+<CodeGroup>
+
+```bash Usage
+kyber_cli start-server \
+  --name "My KYBER Server" \
+  --region "US-West" \
+  --max-players 40 \
+  --map "Naboo" \
+  --mode "Supremacy"
+```
+
+```dart Implementation
+class StartServerCommand extends Command<int> {
+  @override
+  String get description => 'Start a dedicated KYBER server';
+  
+  @override
+  String get name => 'start-server';
+  
+  StartServerCommand({required Logger logger}) : _logger = logger {
+    argParser
+      ..addOption('name', help: 'Server name', mandatory: true)
+      ..addOption('region', help: 'Server region', defaultsTo: 'US-East')
+      ..addOption('max-players', help: 'Max players', defaultsTo: '40')
+      ..addOption('map', help: 'Starting map')
+      ..addOption('mode', help: 'Game mode');
+  }
+  
+  final Logger _logger;
+  
+  @override
+  Future<int> run() async {
+    final name = argResults!['name'] as String;
+    final region = argResults!['region'] as String;
+    final maxPlayers = int.parse(argResults!['max-players'] as String);
+    
+    _logger.info('Starting server: $name');
+    
+    // Initialize Maxima backend
+    final maxima = await MaximaInstance.create();
+    await maxima.start();
+    
+    // Register server with API
+    final serverId = await _registerServer(name, region, maxPlayers);
+    _logger.success('Server registered: $serverId');
+    
+    // Start game server process
+    await _startGameServer(maxima, serverId);
+    
+    // Keep running
+    await Future.delayed(Duration(days: 365));
+    
+    return ExitCode.success.code;
+  }
+}
+```
+
+</CodeGroup>
+
+### Start Game
+
+Launch the game with custom settings:
+
+```bash
+kyber_cli start-game \
+  --profile "MyProfile" \
+  --server-id "abc123"
+```
+
+### Get Token
+
+Obtain authentication tokens:
+
+<Tabs>
+  <Tab title="KYBER Token">
+    ```bash
+    kyber_cli get-token --username "player@example.com"
+    ```
+    
+    Output:
+    ```
+    Token: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
+    Expires: 2026-03-04T12:00:00Z
+    ```
+  </Tab>
+  
+  <Tab title="EA Token">
+    ```bash
+    kyber_cli get-ea-token --email "player@example.com"
+    ```
+    
+    Output:
+    ```
+    EA Token: QVQxOjEuMDo...
+    Persona ID: 1234567890
+    ```
+  </Tab>
+</Tabs>
+
+### Download Game
+
+Download game files from EA servers:
+
+```bash
+kyber_cli download-game \
+  --output-dir "C:/Games/Battlefront2" \
+  --verify
+```
+
+## Building
+
+### Prerequisites
+
+<Steps>
+  <Step title="Install Dart SDK">
+    Install Dart 3.10 or later:
+    ```bash
+    # Windows (Chocolatey)
+    choco install dart-sdk
+    
+    # macOS (Homebrew)
+    brew install dart
+    
+    # Linux (apt)
+    sudo apt install dart
+    ```
+  </Step>
+  
+  <Step title="Install Rust">
+    Install Rust nightly toolchain:
+    ```bash
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    rustup toolchain install nightly
+    ```
+  </Step>
+  
+  <Step title="Bootstrap Workspace">
+    ```bash
+    cd ~/workspace/source
+    dart pub global activate melos
+    melos bootstrap
+    ```
+  </Step>
+</Steps>
+
+### Build Commands
+
+<Tabs>
+  <Tab title="Compile Binary">
+    ```bash
+    cd CLI
+    
+    # Install dependencies
+    flutter pub get
+    
+    # Generate FFI bindings
+    flutter_rust_bridge_codegen generate
+    
+    # Compile to native binary
+    dart compile exe bin/kyber_cli.dart -o kyber_cli
+    ```
+    
+    Output: `CLI/kyber_cli` (or `kyber_cli.exe` on Windows)
+  </Tab>
+  
+  <Tab title="Using Dart Build">
+    ```bash
+    cd CLI
+    dart build cli bin/kyber_cli.dart
+    ```
+    
+    Output: `build/cli/<platform>/bundle/bin/kyber_cli`
+  </Tab>
+</Tabs>
+
+### Deployment
+
+<Warning>
+  After building, copy the Rust library from `build/cli/<platform>/bundle/lib/` next to the binary.
+</Warning>
+
+<Tabs>
+  <Tab title="Windows">
+    Required files next to `kyber_cli.exe`:
+    ```
+    kyber_cli.exe
+    kyber_cli_rust.dll
+    maxima-service.exe
+    maxima-bootstrap.exe
+    ```
+  </Tab>
+  
+  <Tab title="Linux">
+    Required files next to `kyber_cli`:
+    ```
+    kyber_cli
+    libkyber_cli_rust.so
+    maxima-bootstrap
+    ```
+  </Tab>
+</Tabs>
+
+## Configuration
+
+### Environment Variables
+
+```bash .env
+# API Configuration
+KYBER_API_URL=https://api.kyber.gg
+KYBER_API_GRPC_PORT=9027
+
+# Game Configuration
+GAME_INSTALL_PATH=C:/Program Files (x86)/Star Wars Battlefront II
+KYBER_DATA_DIR=C:/ProgramData/Kyber
+
+# Logging
+LOG_LEVEL=info  # Options: error, warn, info, verbose, debug
+
+# Maxima Backend
+MAXIMA_PORT=3216
+MAXIMA_USE_HTTPS=false
+```
+
+### Config File
+
+Create `~/.kyber/config.yaml`:
+
+```yaml
+server:
+  default_name: "My Server"
+  default_region: "US-East"
+  default_max_players: 40
+  
+game:
+  install_path: "C:/Games/Battlefront2"
+  launch_args: ["-fullscreen", "-high"]
+  
+api:
+  url: "https://api.kyber.gg"
+  timeout: 30s
+```
+
+## Advanced Usage
+
+### Server Automation
+
+Create a systemd service for auto-restart:
+
+```ini /etc/systemd/system/kyber-server.service
+[Unit]
+Description=KYBER Dedicated Server
+After=network.target
+
+[Service]
+Type=simple
+User=kyber
+WorkingDirectory=/opt/kyber
+ExecStart=/opt/kyber/kyber_cli start-server \
+  --name "24/7 Supremacy" \
+  --region "US-East" \
+  --mode "Supremacy"
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start:
+```bash
+sudo systemctl enable kyber-server
+sudo systemctl start kyber-server
+```
+
+### Scripting
+
+Automate server rotation:
+
+```bash
+#!/bin/bash
+
+MAPS=("Naboo" "Hoth" "Endor" "Tatooine")
+
+for map in "${MAPS[@]}"; do
+  echo "Starting $map rotation..."
+  
+  kyber_cli start-server \
+    --name "Map Rotation - $map" \
+    --map "$map" \
+    --mode "Supremacy" \
+    --max-players 40 &
+  
+  sleep 3600  # 1 hour per map
+  
+  # Graceful shutdown
+  killall kyber_cli
+  sleep 10
+done
+```
+
+### Shell Completion
+
+Enable auto-completion:
+
+<Tabs>
+  <Tab title="Bash">
+    ```bash
+    # Generate completion script
+    kyber_cli completion bash > /etc/bash_completion.d/kyber_cli
+    
+    # Or for current user
+    kyber_cli completion bash > ~/.local/share/bash-completion/completions/kyber_cli
+    ```
+  </Tab>
+  
+  <Tab title="Zsh">
+    ```bash
+    # Add to ~/.zshrc
+    eval "$(kyber_cli completion zsh)"
+    ```
+  </Tab>
+  
+  <Tab title="Fish">
+    ```fish
+    kyber_cli completion fish > ~/.config/fish/completions/kyber_cli.fish
+    ```
+  </Tab>
+</Tabs>
+
+## Logging
+
+Structured logging with mason_logger:
+
+```dart
+_logger.info('Server starting...');
+_logger.success('Server started successfully!');
+_logger.warn('Low player count: 5/40');
+_logger.err('Failed to connect to API');
+_logger.detail('Debug information: $data');
+```
+
+Log output format:
+```
+[2026-03-03 14:30:15] [info] - Server starting...
+[2026-03-03 14:30:20] [success] - Server started successfully!
+[2026-03-03 14:32:10] [warn] - Low player count: 5/40
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Missing Rust Library">
+    Ensure the Rust library is in the same directory as the CLI binary:
+    ```bash
+    # Copy from build output
+    cp build/cli/linux-x64/bundle/lib/libkyber_cli_rust.so .
+    ```
+  </Accordion>
+  
+  <Accordion title="Maxima Bootstrap Failed">
+    Verify Maxima binaries are present:
+    ```bash
+    # Check files
+    ls -la maxima-*
+    
+    # Test Maxima directly
+    ./maxima-bootstrap
+    ```
+  </Accordion>
+  
+  <Accordion title="API Connection Failed">
+    Check network and API availability:
+    ```bash
+    # Test API connectivity
+    curl https://api.kyber.gg/health
+    
+    # Check environment variables
+    echo $KYBER_API_URL
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Performance
+
+- Binary size: ~15MB (compiled)
+- Memory usage: ~50MB (idle), ~200MB (running server)
+- Startup time: &lt;1 second
+- CPU usage: Minimal (event-driven I/O)
+
+## Related Components
+
+- [Launcher](/development/launcher) - GUI alternative to CLI
+- [API](/development/api) - Backend services consumed by CLI
+- [Module](/development/module) - Game module loaded by CLI

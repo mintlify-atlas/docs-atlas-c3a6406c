@@ -1,0 +1,431 @@
+---
+title: "Troubleshooting"
+description: "Solutions to common issues and problems with Kyber"
+icon: "wrench"
+---
+
+## Installation Issues
+
+### Launcher won't start or shows white screen
+
+**Symptoms**: Launcher doesn't open, shows a blank white screen, or becomes invisible on startup.
+
+**Solutions**:
+
+<AccordionGroup>
+  <Accordion title="Clear launcher cache">
+    1. Close the Kyber launcher completely
+    2. Navigate to `%appdata%\ArmchairDevelopers\Kyber`
+    3. Delete the cache folders
+    4. Restart the launcher
+    
+    <Note>
+      The launcher clears the Nexus Mods cache between versions automatically to prevent issues with outdated cache.
+    </Note>
+  </Accordion>
+
+  <Accordion title="Check Windows compatibility">
+    - Ensure you're running Windows 7 or later
+    - Windows 10/11 is recommended for best performance
+    - Windows 7 Compatibility Mode is no longer needed as of beta5
+    
+    <Warning>
+      Do NOT run the launcher in compatibility mode unless specifically instructed.
+    </Warning>
+  </Accordion>
+
+  <Accordion title="Reset launcher settings">
+    1. Close the launcher
+    2. Click **Reset** in settings (if accessible)
+    3. Close the launcher again
+    4. Restart
+    
+    Note: The reset function requires a full launcher restart to complete.
+  </Accordion>
+</AccordionGroup>
+
+### "PanicException" error when starting game
+
+**Symptoms**: Error message about "PanicException" when trying to launch the game.
+
+**Solution**: This issue was fixed in version 2.0.0-beta3. Make sure you're running the latest version of Kyber.
+
+### Installer gets stuck at "Updating Module"
+
+**Symptoms**: The installation process freezes at the module update stage.
+
+**Solutions**:
+1. Close the launcher completely
+2. Check your antivirus - add Kyber to exclusions
+3. Verify you have administrator permissions
+4. Delete `C:\ProgramData\Kyber\Module` and reinstall
+5. Restart the launcher
+
+<Note>
+  This issue was addressed in version 2.0.0-beta7.
+</Note>
+
+## Authentication & Login Issues
+
+### Nexus Mods login loads indefinitely
+
+**Symptoms**: Nexus Mods authentication window spins forever or doesn't complete.
+
+**Solutions**:
+
+<AccordionGroup>
+  <Accordion title="Clear browser cache">
+    The launcher now uses a new API for Nexus Mods authentication (as of alpha7):
+    1. Close the launcher
+    2. Clear the cache in `%appdata%\ArmchairDevelopers\Kyber`
+    3. Restart and try logging in again
+  </Accordion>
+
+  <Accordion title="Create account in launcher">
+    If you're creating a new Nexus Mods account:
+    - Use the in-launcher account creation flow
+    - An issue preventing new account creation was fixed in beta6
+    - Make sure you're on the latest version
+  </Accordion>
+
+  <Accordion title="Check Nexus Mods status">
+    Visit [nexusmods.com](https://nexusmods.com) to verify:
+    - Your account is active
+    - Nexus Mods services are online
+    - You can log in through their website
+  </Accordion>
+</AccordionGroup>
+
+### HandshakeException when joining servers or downloading mods
+
+**Symptoms**: Connection errors with "HandshakeException" message.
+
+**Solution**: This was a certificate issue fixed in version 2.0.0-beta2. Update to the latest version.
+
+### Patreon linking fails
+
+**Symptoms**: Unable to link Patreon account or whitelist doesn't activate.
+
+**Solutions**:
+1. Use the **Settings** page to unlink and relink your account
+2. Make sure you're logged in to Patreon in your browser
+3. Patreon supporters should have Discord linked automatically after login
+4. Contact support on Discord if the issue persists
+
+<Note>
+  A potential fix for Patreon linking issues was implemented in beta5.
+</Note>
+
+## Connection & Server Issues
+
+### Cannot join servers or launcher turns grey
+
+**Symptoms**: Launcher becomes unresponsive or grey when attempting to join a server.
+
+**Solutions**:
+
+<AccordionGroup>
+  <Accordion title="Check required mods">
+    - Ensure you have disk space for automatic mod downloads
+    - Wait for required gameplay mods to download
+    - Verify you can download mods when the server is full
+    
+    An issue preventing mod downloads for full servers was fixed in beta9.
+  </Accordion>
+
+  <Accordion title="Verify proxy connection">
+    1. Go to **Settings** > **Proxy**
+    2. Try the **Auto** setting (added in beta2)
+    3. If that fails, manually select a different proxy
+    4. Check your firewall isn't blocking connections
+    
+    <Note>
+      Proxies are now pinged multiple times for more accurate ping values (beta7).
+    </Note>
+  </Accordion>
+
+  <Accordion title="Check server capacity">
+    - An issue allowing players to join full servers was fixed in beta8
+    - Server groups now show correct instance availability
+    - Try selecting a different instance in the join dialog
+  </Accordion>
+</AccordionGroup>
+
+### High ping to servers
+
+**Symptoms**: Experiencing lag or high latency when connected to servers.
+
+**Solutions**:
+1. Use the **Auto** proxy setting to find the best proxy
+2. Check the region icons in the server browser
+3. Select servers closer to your geographic location
+4. Verify your internet connection is stable
+5. Close bandwidth-heavy applications
+
+<Warning>
+  High ping issues for some users are a known issue and are being investigated.
+</Warning>
+
+### Proxy reconnection issues
+
+**Symptoms**: Disconnects during gameplay or "connection lost" errors.
+
+**Solution**: The proxy reconnection bug was fixed in beta5. Packets sent while reconnecting are now handled correctly, preventing engine disconnections.
+
+### "Request Range Not Satisfiable" download errors
+
+**Symptoms**: Downloads fail with "Request Range Not Satisfiable" error.
+
+**Solution**: Fixed in beta6. The download manager was overhauled. Make sure you're on the latest version.
+
+## Mod & Content Issues
+
+### Mods won't download or install
+
+**Symptoms**: Automatic mod downloads fail or don't start.
+
+**Solutions**:
+
+<AccordionGroup>
+  <Accordion title="Check Nexus Mods login">
+    1. Verify you're logged in to Nexus Mods
+    2. Premium users get faster downloads via API
+    3. Re-authenticate if login status shows incorrect
+    
+    An issue with Nexus Mods Premium downloads was fixed in beta5.
+  </Accordion>
+
+  <Accordion title="Verify mod path">
+    - Ensure mod path doesn't contain non-ASCII characters
+    - The launcher prevents setting invalid paths (beta6+)
+    - Don't use special characters or emojis in the path
+    
+    <Warning>
+      Paths with non-ASCII characters can cause installation failures.
+    </Warning>
+  </Accordion>
+
+  <Accordion title="Check download manager">
+    The download manager was overhauled in beta8:
+    - You can now pause, resume, and cancel downloads
+    - Progress is saved and restored on restart
+    - Extraction progress is shown for .zip and .rar files
+    - Report issues to Discord if problems persist
+  </Accordion>
+
+  <Accordion title="CDN issues">
+    As of beta8, Kyber uses a new CDN:
+    - Should improve download speeds
+    - Reduces download failures
+    - If you experience issues, report them on Discord
+  </Accordion>
+</AccordionGroup>
+
+### Mods don't appear in collection or game
+
+**Symptoms**: Installed mods aren't showing up or loading.
+
+**Solutions**:
+1. Check if mods are in the correct category (gameplay vs cosmetic)
+2. Verify the collection is properly saved (press Enter to save)
+3. Refresh the mods list (filesystem changes should auto-detect)
+4. Files in "MISCELLANEOUS FILES" category now display correctly (beta7+)
+5. Ensure you're not exceeding the 247 mod limit
+
+### Wrong files loaded when using mod collection
+
+**Symptoms**: Collection loads incorrect mods or duplicates.
+
+**Solution**: This issue was fixed in beta5:
+- Make sure collections are properly saved
+- Delete and recreate problematic collections
+- Verify each mod's category (Map category is now gameplay)
+
+### Cannot extract .rar or .7z mods
+
+**Symptoms**: Extraction fails for certain archive types.
+
+**Solutions**:
+- Ensure you're on version alpha7 or later (added .rar/.7z support)
+- For .7z files: extraction works but progress isn't shown
+- For .rar files: should show extraction progress
+- Re-download if the archive is corrupted
+
+## Game Launch Issues
+
+### Game crashes on startup or when changing maps
+
+**Symptoms**: Game crashes, especially during map transitions.
+
+**Solutions**:
+
+<AccordionGroup>
+  <Accordion title="Check for mod conflicts">
+    - Disable multiple big mod packs (launcher warns about this)
+    - Use separate collections for different setups
+    - Verify mods are compatible with current game version
+  </Accordion>
+
+  <Accordion title="Fix for Kyber.Restart crashes">
+    If crashes occur when using the `Kyber.Restart` command:
+    - This issue was fixed in beta7
+    - Update to the latest version
+    - The multiple level loading crash was also fixed
+  </Accordion>
+
+  <Accordion title="Check module injection">
+    An issue preventing proper KYBER injection was fixed in alpha2:
+    1. Verify module path is `C:\ProgramData\Kyber\Module`
+    2. Check antivirus isn't blocking injection
+    3. Run launcher as administrator if needed
+  </Accordion>
+</AccordionGroup>
+
+### "The title is installed in a language you are not entitled to play"
+
+**Symptoms**: Error message about language entitlement.
+
+**Solution**: Fixed in beta9 by moving the Module path to `C:\ProgramData\Kyber\Module` to prevent issues with non-ASCII characters in user profile paths.
+
+### Game settings reset after every launch
+
+**Symptoms**: Battlefront 2 settings don't persist between sessions.
+
+**Solution**: Cloud Sync was fixed in beta6. Your settings should now persist correctly.
+
+### Expired EA session warning
+
+**Symptoms**: Warning dialog about expired EA session when starting game.
+
+**Solution**: 
+1. Log out of Kyber launcher
+2. Log back in with your EA account
+3. This re-authenticates your session
+4. The warning was added in beta9 to prevent issues
+
+## Stats & Progression Issues
+
+### Stats not updating on official servers
+
+**Symptoms**: Statistics don't save or update after matches.
+
+**Solutions**:
+- This was fixed in beta9 and beta7
+- Update to the latest version
+- If stats page softlocks, restart the launcher
+- Check your EA authentication is valid
+
+### Stats page softlocks or won't load
+
+**Symptoms**: Stats page freezes when trying to load.
+
+**Solution**: Fixed in beta9 - the launcher now handles EA stats failures gracefully without softlocking.
+
+## UI & Interface Issues
+
+### Buttons greyed out or unresponsive
+
+**Symptoms**: UI elements become disabled or don't respond to clicks.
+
+**Solutions**:
+
+<AccordionGroup>
+  <Accordion title="Collection creation button">
+    Fixed in beta9: The "CREATE NEW COLLECTION" button no longer greys out on the server host page.
+  </Accordion>
+
+  <Accordion title="Server group full">
+    Fixed in beta9: Launcher no longer greys out when a server group is full - you can select alternative instances.
+  </Accordion>
+
+  <Accordion title="Frosty Import Dialog">
+    Fixed in beta2: The Frosty Import Dialog should no longer grey out during import.
+  </Accordion>
+</AccordionGroup>
+
+### Map rotation builder shows wrong maps
+
+**Symptoms**: Incorrect maps displayed in the rotation builder.
+
+**Solution**: This was fixed in alpha9. Make sure you're using the latest version and that custom mode/map mods implement the new format.
+
+### Server browser shows same map for all instances
+
+**Symptoms**: All instances of a server group show identical map in browser.
+
+**Solution**: Fixed in beta9. Server instances now correctly display their individual current maps.
+
+## Voice Chat Issues
+
+### Proximity voice chat not working
+
+**Symptoms**: Cannot hear others or be heard in proximity chat.
+
+**Solutions**:
+1. Check voice chat is enabled in Settings
+2. Verify correct input/output devices are selected
+3. Test push-to-talk keybind (if enabled)
+4. Check Windows microphone permissions
+5. Ensure game volume isn't muted
+
+<Note>
+  Proximity voice chat was fixed in beta7 and enhanced with in-game icons.
+</Note>
+
+### Cannot change audio devices
+
+**Symptoms**: Unable to switch voice chat devices without being in-game.
+
+**Solution**: As of beta7, you can switch input/output devices for proximity voice chat directly in Settings without needing to be in-game.
+
+## Performance Issues
+
+### Launcher is slow or unresponsive
+
+**Symptoms**: Launcher lags, freezes, or responds slowly.
+
+**Solutions**:
+1. Close unnecessary background applications
+2. Clear launcher cache in `%appdata%\ArmchairDevelopers\Kyber`
+3. Reduce number of active mods (under 247 recommended)
+4. Performance improvements were made in alpha7
+5. Memory leak in Module was fixed in beta5
+
+### Slow mod browser or search
+
+**Symptoms**: Mod browser is sluggish or search takes too long.
+
+**Solutions**:
+- Mod browser was overhauled in alpha4 and alpha7
+- Nexus Mods search improvements in beta4
+- Set custom items per page value in settings
+- Clear mod browser cache (stored in system temp folder)
+
+## Still Need Help?
+
+<CardGroup cols={2}>
+  <Card title="Join Discord" icon="discord" href="https://discord.gg/kyber">
+    Get help from the community and support team
+  </Card>
+  
+  <Card title="Report Issues" icon="github" href="https://github.com/ArmchairDevelopers/Kyber/issues">
+    Submit bug reports and feature requests
+  </Card>
+  
+  <Card title="Export Logs" icon="file-export">
+    Press `Ctrl + Alt + Space` to export diagnostic logs
+  </Card>
+  
+  <Card title="Check FAQ" icon="circle-question" href="/community/faq">
+    See frequently asked questions
+  </Card>
+</CardGroup>
+
+<Warning>
+  When reporting issues, always include:
+  - Your Kyber version
+  - Your Windows version
+  - Exported logs (Ctrl + Alt + Space)
+  - Steps to reproduce the issue
+  - Any error messages
+</Warning>

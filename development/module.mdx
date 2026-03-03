@@ -1,0 +1,411 @@
+---
+title: Module
+description: C++ game module injected into Star Wars Battlefront II
+icon: puzzle-piece
+---
+
+The KYBER Module is a C++ DLL that gets injected into the Star Wars Battlefront II game client to enable private server functionality, custom modifications, and enhanced multiplayer features.
+
+## Overview
+
+The Module serves as the core runtime component that:
+- Intercepts and modifies game network traffic
+- Implements custom multiplayer functionality
+- Loads and manages game modifications
+- Provides VoIP integration
+- Handles game state synchronization
+- Enables custom scripting via Lua
+
+<Warning>
+  The Module can **only** be built on Windows with MSVC toolchain.
+</Warning>
+
+## Tech Stack
+
+<CardGroup cols={2}>
+  <Card title="Language" icon="code">
+    C++17/20
+  </Card>
+  <Card title="Build System" icon="hammer">
+    Bazel with Bazelisk
+  </Card>
+  <Card title="Compiler" icon="wrench">
+    MSVC (Visual Studio)
+  </Card>
+  <Card title="Architecture" icon="microchip">
+    x86-64 DLL injection
+  </Card>
+</CardGroup>
+
+### Key Dependencies
+
+- **EASTL**: Custom STL implementation for game compatibility
+- **gRPC**: Communication with KYBER API
+- **Protocol Buffers**: Serialization format
+- **IXWebSocket**: WebSocket client for real-time communication
+- **Sentry**: Crash reporting and error tracking
+- **Lua**: Scripting engine for mods
+- **Vivox**: Voice chat integration
+- **SafetyHook**: Safe function hooking library
+- **nlohmann/json**: JSON parsing
+- **GLM**: Math library for game calculations
+
+## Architecture
+
+The Module is organized into distinct subsystems:
+
+```
+Source/
+├── Core/              # Core initialization and management
+│   ├── Main.cpp          # DLL entry point
+│   ├── Client.cpp        # Client-side logic
+│   ├── Server.cpp        # Server-side logic
+│   ├── Memory.cpp        # Memory management
+│   └── EventManager.cpp  # Event system
+├── Network/           # Network layer
+│   ├── SocketManager.cpp # Socket management
+│   ├── UDPSocket.cpp     # UDP networking
+│   └── WebSocket.cpp     # WebSocket client
+├── ModLoader/         # Mod loading system
+├── Script/            # Lua scripting engine
+├── RPC/               # gRPC client implementation
+├── Hook/              # Game function hooks
+├── Voip/              # Voice chat integration
+├── Entity/            # Game entity management
+└── Utilities/         # Helper functions
+```
+
+### Core Components
+
+<CodeGroup>
+
+```cpp Source/Core/Main.cpp
+// DLL Entry Point
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved) {
+    switch (ul_reason_for_call) {
+        case DLL_PROCESS_ATTACH:
+            DisableThreadLibraryCalls(hModule);
+            Kyber::Init(hModule);
+            break;
+        case DLL_PROCESS_DETACH:
+            Kyber::Shutdown();
+            break;
+    }
+    return TRUE;
+}
+
+namespace Kyber {
+    void Init(HMODULE hModule) {
+        // Initialize Sentry for crash reporting
+        InitSentry();
+        
+        // Setup memory hooks
+        Memory::Initialize();
+        
+        // Initialize event system
+        EventManager::Initialize();
+        
+        // Start network manager
+        NetworkManager::Initialize();
+        
+        // Load mod system
+        ModLoader::Initialize();
+    }
+}
+```
+
+```cpp Source/Network/SocketManager.cpp
+class SocketManager {
+public:
+    void Initialize() {
+        // Hook game's socket functions
+        HookSocketFunctions();
+        
+        // Connect to KYBER proxy
+        ConnectToProxy();
+    }
+    
+    void RoutePacket(const GamePacket& packet) {
+        // Redirect game traffic through KYBER servers
+        if (packet.IsGameplayPacket()) {
+            SendToKyberServer(packet);
+        } else {
+            SendToOriginalDestination(packet);
+        }
+    }
+};
+```
+
+```cpp Source/ModLoader/ModLoader.cpp
+class ModLoader {
+public:
+    void LoadMods() {
+        auto modPath = GetModDirectory();
+        
+        for (const auto& entry : fs::directory_iterator(modPath)) {
+            if (entry.path().extension() == ".zip") {
+                LoadModArchive(entry.path());
+            }
+        }
+    }
+    
+    void LoadModArchive(const fs::path& archivePath) {
+        // Extract and mount mod files
+        // Override game assets
+        // Execute mod scripts
+    }
+};
+```
+
+</CodeGroup>
+
+## Building
+
+### Prerequisites
+
+<Steps>
+  <Step title="Install Visual Studio">
+    Install Visual Studio 2019 or later with C++ desktop development tools
+  </Step>
+  
+  <Step title="Install MSYS2">
+    Download and install [MSYS2](https://www.msys2.org/) to `C:\msys64`
+  </Step>
+  
+  <Step title="Install Bazelisk">
+    Download [Bazelisk](https://github.com/bazelbuild/bazelisk/releases/download/v1.25.0/bazelisk-windows-amd64.exe) and rename to `bazel.exe` in your PATH
+  </Step>
+  
+  <Step title="Setup Build Directory">
+    Create a short path for build artifacts to avoid Windows path length limitations:
+    ```bash
+    mkdir C:\bz
+    ```
+  </Step>
+  
+  <Step title="Clone with Submodules">
+    ```bash
+    git clone --recurse-submodules https://github.com/ArmchairDevelopers/Kyber.git
+    # Or if already cloned:
+    git submodule update --init --recursive
+    ```
+  </Step>
+</Steps>
+
+### Build Commands
+
+<Tabs>
+  <Tab title="Release Build (Required)">
+    ```bash
+    cd Module
+    bazel --output_user_root="C:\bz" build --config=release Kyber
+    ```
+    
+    <Warning>
+      **Always use `--config=release`**. Debug builds will cause game crashes due to runtime library mismatches.
+    </Warning>
+    
+    Output: `Module/bazel-bin/Kyber.dll`
+  </Tab>
+  
+  <Tab title="Using Build Script">
+    ```bash
+    cd Module
+    .\build.bat
+    ```
+    
+    Edit `build.bat` to adjust the drive letter if needed.
+  </Tab>
+</Tabs>
+
+### Installing Built Module
+
+Copy the built DLL to the KYBER installation directory:
+
+```bash
+copy Module\bazel-bin\Kyber.dll C:\ProgramData\Kyber\Module\Kyber.dll
+```
+
+The Launcher will automatically inject this DLL when starting the game.
+
+## Build Configuration
+
+<CodeGroup>
+
+```python BUILD.bazel
+cc_binary(
+    name = "Kyber",
+    srcs = glob(["Source/**/*.cpp"]),
+    includes = ["Public"],
+    linkopts = [
+        "d3d11.lib",
+        "Ws2_32.lib",
+        "dxgi.lib",
+        "rpcrt4.lib",
+        "winmm.lib",
+        "version.lib",
+        "Ole32.lib",
+        "crypt32.lib",
+        "User32.lib",
+        "Shell32.lib",
+    ],
+    linkshared = 1,  # Build as DLL
+    deps = [
+        ":KyberAPIProto",
+        "//ThirdParty/EASTL",
+        "//ThirdParty/IXWebSocket",
+        "//ThirdParty/json",
+        "//ThirdParty/sentry",
+        "//ThirdParty/lua",
+        "//ThirdParty/safetyhook",
+        "@grpc//:grpc++",
+    ],
+)
+```
+
+```protobuf Proto/kyber_api.proto
+syntax = "proto3";
+
+package kyber.api;
+
+service KyberService {
+  rpc GetServerList(ServerListRequest) returns (ServerListResponse);
+  rpc JoinServer(JoinServerRequest) returns (JoinServerResponse);
+  rpc UpdatePlayerStatus(PlayerStatusUpdate) returns (Empty);
+}
+
+message ServerListRequest {
+  string region = 1;
+  string game_mode = 2;
+}
+
+message ServerListResponse {
+  repeated Server servers = 1;
+}
+```
+
+</CodeGroup>
+
+## Development Setup
+
+### Code Completion with VSCode
+
+<Steps>
+  <Step title="Install clangd Extension">
+    Install the [clangd](https://marketplace.visualstudio.com/items?itemName=llvm-vs-code-extensions.vscode-clangd) extension for VSCode
+  </Step>
+  
+  <Step title="Generate compile_commands.json">
+    ```bash
+    cd Module
+    clangd\refresh.bat
+    ```
+  </Step>
+  
+  <Step title="Configure VSCode">
+    Create `.vscode/settings.json`:
+    ```json
+    {
+      "clangd.arguments": [
+        "--compile-commands-dir=${workspaceFolder}/Module",
+        "--header-insertion=never"
+      ]
+    }
+    ```
+  </Step>
+</Steps>
+
+## Key Features
+
+### Network Interception
+
+The Module intercepts game network calls and redirects them to KYBER servers:
+
+- Hooks Winsock API functions (`send`, `recv`, `connect`)
+- Redirects EA backend calls to Maxima (custom backend)
+- Routes game traffic through KYBER proxy servers
+- Maintains compatibility with original game protocols
+
+### Mod Loading
+
+Supports multiple mod formats:
+
+- **FBMod**: Frosty mod format (.fbmod)
+- **Archive Mods**: ZIP files with asset overrides
+- **Script Mods**: Lua scripts for gameplay modifications
+
+### VoIP Integration
+
+Integrates Vivox SDK for proximity voice chat:
+
+- Positional audio based on player location
+- Team-based voice channels
+- Mute/unmute controls
+- Push-to-talk support
+
+## Common Issues
+
+<AccordionGroup>
+  <Accordion title="Path Too Long Errors">
+    Bazel generates very long paths. Use `--output_user_root="C:\bz"` to shorten them:
+    ```bash
+    bazel --output_user_root="C:\bz" build --config=release Kyber
+    ```
+  </Accordion>
+  
+  <Accordion title="Game Crashes on Launch">
+    Ensure you're building with `--config=release`. Debug builds use different runtime libraries that cause crashes.
+  </Accordion>
+  
+  <Accordion title="Missing Dependencies">
+    Update submodules:
+    ```bash
+    git submodule update --init --recursive
+    ```
+  </Accordion>
+  
+  <Accordion title="MSVC Not Found">
+    Bazel needs to find MSVC. Set environment variable:
+    ```bash
+    set BAZEL_VC=C:\Program Files\Microsoft Visual Studio\2022\Community\VC
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Debugging
+
+<Warning>
+  Debugging the Module is complex due to DLL injection and game anti-cheat considerations.
+</Warning>
+
+### Recommended Approach
+
+1. Use extensive logging with Sentry
+2. Add debug prints to `DebugConsole`
+3. Use `OutputDebugString` for Windows debug output
+4. Test in isolated environment first
+
+### Logging Example
+
+```cpp
+#include "Core/Console.h"
+
+void MyFunction() {
+    Logger::Info("Function called with value: %d", someValue);
+    Logger::Error("Error occurred: %s", errorMsg);
+}
+```
+
+## Performance Considerations
+
+- Module runs in the game's main thread
+- Keep hook functions lightweight and fast
+- Use async operations for network calls
+- Minimize allocations in hot paths
+- Profile with game's built-in profiler
+
+## Related Components
+
+- [Launcher](/development/launcher) - Injects the Module into the game
+- [Proxy](/development/proxy) - Routes game traffic
+- [API](/development/api) - Provides server data to the Module

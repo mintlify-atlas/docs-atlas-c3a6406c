@@ -1,0 +1,614 @@
+---
+title: Server Moderation Tools
+description: Manage players, enforce rules, and moderate your Kyber servers
+---
+
+## Overview
+
+Kyber provides comprehensive moderation tools for server hosts and assigned moderators. You can kick, ban, run commands, and manage a team of moderators to maintain a healthy community.
+
+## Moderation Permissions
+
+### Server Host
+
+As the server host, you have full moderation powers:
+
+- Kick players
+- Ban players (permanent or temporary)
+- Run server commands
+- Add/remove moderators
+- View punishment history
+- Overturn bans
+
+### Assigned Moderators
+
+Moderators you assign can:
+
+- Kick players
+- Ban players
+- Run server commands
+- View punishment history
+
+<Note>
+Moderators cannot ban the server host or manage other moderators.
+</Note>
+
+### Global Moderators
+
+Kyber staff with special entitlements:
+
+- **Global Server Moderator**: Can moderate all servers
+- **Official Server Moderator**: Can moderate official Kyber servers only
+
+From source/API/internal/rpc/server_management.go:306-332:
+
+```go
+if user.Entitled(models.EntitlementGlobalServerModerator) {
+  ids, err = s.store.Servers.GetIDs(ctx)
+} else if user.Entitled(models.EntitlementOfficialServerModerator) {
+  officialServers, err := s.store.Servers.GetByDoc(ctx, bson.M{"official": true})
+  for _, server := range officialServers {
+    ids = append(ids, server.ID)
+  }
+}
+```
+
+## Accessing Moderation Tools
+
+### In the Launcher
+
+<Steps>
+  <Step title="Open Server Moderation">
+    Navigate to the Server Moderation section in the launcher.
+  </Step>
+  
+  <Step title="View Your Servers">
+    See all servers where you have moderation permissions.
+  </Step>
+  
+  <Step title="Select Server">
+    Click on a server to access its moderation panel.
+  </Step>
+  
+  <Step title="Moderate">
+    Use the tools to kick, ban, or manage players.
+  </Step>
+</Steps>
+
+### Server List
+
+Your moderated servers list includes:
+
+- Servers you host
+- Servers where you're assigned as moderator
+- Official servers (if you have staff permissions)
+
+## Player Management
+
+### Kicking Players
+
+Kicking removes a player from the server immediately:
+
+<Steps>
+  <Step title="Find Player">
+    Locate the player in the server's player list.
+  </Step>
+  
+  <Step title="Click Kick">
+    Click the kick button next to their name.
+  </Step>
+  
+  <Step title="Provide Reason">
+    Enter a reason for the kick (optional but recommended).
+  </Step>
+  
+  <Step title="Confirm">
+    The player is immediately disconnected.
+  </Step>
+</Steps>
+
+From source/API/internal/rpc/server_management.go:217-256, the kick process:
+
+```go
+func (s *ServerManagement) KickPlayer(ctx context.Context, req *pbapi.ServerKickPlayerRequest) (*pbcommon.Empty, error) {
+  // Verify moderator permissions
+  server, _, err := s.isModerator(ctx, req.GetId())
+  
+  // Cannot kick the host
+  if (target.ID == server.HostID) {
+    return nil, status.Error(codes.PermissionDenied, "You cannot kick the server host")
+  }
+  
+  // Create punishment record
+  err = s.store.Punishments.Create(ctx, &models.PunishmentModel{
+    Type:      models.PunishmentTypeKick,
+    Issuer:    &server.HostID,
+    User:      &target.ID,
+    Reason:    util.ToPtr(req.GetReason()),
+    IssuedAt:  time.Now(),
+  })
+  
+  // Kick from server
+  s.sm.KickPlayer(server.ID, target.ID, req.GetReason())
+}
+```
+
+<Note>
+Kicks are logged in the punishment database for tracking repeat offenders.
+</Note>
+
+### Banning Players
+
+Bans prevent players from rejoining your server:
+
+<Steps>
+  <Step title="Find Player">
+    Locate the player in the server's player list or ban list.
+  </Step>
+  
+  <Step title="Click Ban">
+    Click the ban button.
+  </Step>
+  
+  <Step title="Configure Ban">
+    Set:
+    - **Reason**: Why the player is banned (required)
+    - **Duration**: Permanent or temporary (in seconds)
+  </Step>
+  
+  <Step title="Confirm">
+    The player is kicked and banned from rejoining.
+  </Step>
+</Steps>
+
+#### Ban Durations
+
+**Permanent Ban:**
+```json
+{
+  "reason": "Cheating",
+  "duration": null
+}
+```
+
+**Temporary Ban (1 day):**
+```json
+{
+  "reason": "Toxic behavior",
+  "duration": 86400
+}
+```
+
+**Temporary Ban (1 week):**
+```json
+{
+  "reason": "Team killing",
+  "duration": 604800
+}
+```
+
+From source/API/internal/rpc/server_management.go:279-283:
+
+```go
+var expiresAt *time.Time
+if req.Duration != nil {
+  expiresAt = new(time.Time)
+  *expiresAt = time.Now().Add(time.Duration(*req.Duration) * time.Second)
+}
+```
+
+### Unbanning Players
+
+To remove a ban:
+
+<Steps>
+  <Step title="View Ban List">
+    Access the punishment list for your server.
+  </Step>
+  
+  <Step title="Find Ban">
+    Locate the banned player.
+  </Step>
+  
+  <Step title="Click Unban">
+    Click the unban/overturn button.
+  </Step>
+  
+  <Step title="Confirm">
+    The ban is marked as overturned and the player can rejoin.
+  </Step>
+</Steps>
+
+From source/API/internal/rpc/server_management.go:35-58:
+
+```go
+func (s *ServerManagement) UnbanPlayer(ctx context.Context, req *pbapi.UnbanPlayerRequest) (*pbcommon.Empty, error) {
+  punishment, err := s.store.Punishments.GetBanForServer(ctx, server.HostID, req.GetUserId())
+  
+  punishment.OverturnedBy = &user.ID
+  err = s.store.Punishments.Update(ctx, punishment)
+}
+```
+
+<Warning>
+Banned players cannot rejoin even if they change their username. Bans are tied to their Kyber account ID.
+</Warning>
+
+## Punishment System
+
+### Punishment Types
+
+From source/API/pkg/models/punishment.go:11-16:
+
+```go
+type PunishmentType string
+
+const (
+  PunishmentTypeKick PunishmentType = "KICK"
+  PunishmentTypeBan  PunishmentType = "BAN"
+)
+```
+
+### Punishment Data Model
+
+Each punishment record contains:
+
+| Field | Description |
+|-------|-------------|
+| **ID** | Unique punishment identifier |
+| **Type** | KICK or BAN |
+| **Issuer** | Server host ID (for server bans) |
+| **Moderator ID** | The moderator who issued it |
+| **User** | Banned/kicked player ID |
+| **Reason** | Why the punishment was issued |
+| **Issued At** | Timestamp of punishment |
+| **Expires At** | When temporary bans expire (null for permanent) |
+| **Overturned By** | Who removed the ban (if applicable) |
+
+### Active vs Inactive Bans
+
+From source/API/pkg/models/punishment.go:40-42:
+
+```go
+func (p *PunishmentModel) IsActive() bool {
+  return p.OverturnedBy == nil && (p.ExpiresAt == nil || p.ExpiresAt.After(time.Now()))
+}
+```
+
+A ban is active if:
+- It hasn't been overturned
+- AND it's either permanent OR hasn't expired yet
+
+### Ban Messages
+
+When a banned player tries to join, they see:
+
+**Temporary Ban:**
+```
+You are banned until Mon, 02 Jan 2006 15:04:05 MST. 
+Reason: Toxic behavior
+```
+
+**Permanent Ban:**
+```
+You are permanently banned. 
+Reason: Cheating
+```
+
+## Managing Moderators
+
+### Adding Moderators
+
+<Steps>
+  <Step title="Open Moderator Panel">
+    Navigate to your server's moderation settings.
+  </Step>
+  
+  <Step title="Click Add Moderator">
+    Open the add moderator dialog.
+  </Step>
+  
+  <Step title="Enter User ID">
+    Input the Kyber user ID of the person you want to add.
+  </Step>
+  
+  <Step title="Confirm">
+    The user is added to your moderator list.
+  </Step>
+</Steps>
+
+From source/API/internal/rpc/server_management.go:154-179:
+
+```go
+func (s *ServerManagement) AddModerator(ctx context.Context, req *pbapi.AddModeratorRequest) (*pbcommon.Empty, error) {
+  user := ctx.Value("user").(*models.UserModel)
+
+  if slices.Contains(user.ModeratorUserIDs, req.GetId()) {
+    return nil, status.Error(codes.AlreadyExists, "User is already a moderator")
+  }
+
+  moderator, err := s.store.Users.GetByID(ctx, req.GetId())
+  
+  user.ModeratorUserIDs = append(user.ModeratorUserIDs, moderator.ID)
+  
+  err = s.store.Users.Update(ctx, user.ID, bson.M{"$set": bson.M{"moderator_user_ids": user.ModeratorUserIDs}})
+}
+```
+
+<Tip>
+Find a user's ID by having them open their profile in the launcher and sharing it with you.
+</Tip>
+
+### Removing Moderators
+
+<Steps>
+  <Step title="View Moderator List">
+    Open the list of current moderators.
+  </Step>
+  
+  <Step title="Select Moderator">
+    Find the moderator you want to remove.
+  </Step>
+  
+  <Step title="Click Remove">
+    Remove them from your moderator team.
+  </Step>
+  
+  <Step title="Confirm">
+    They immediately lose moderation permissions.
+  </Step>
+</Steps>
+
+### Viewing Moderators
+
+The moderator list shows:
+
+- Moderator name
+- Moderator Kyber ID
+- When they were added
+- Recent moderation actions
+
+From source/API/internal/rpc/server_management.go:110-152, moderators are fetched and displayed:
+
+```go
+func (s *ServerManagement) GetModerators(ctx context.Context, req *pbapi.ModeratorsRequest) (*pbapi.ModeratorList, error) {
+  users, err := s.store.Users.SearchByIDs(ctx, host.ModeratorUserIDs)
+  
+  cnv := make([]*pbcommon.KyberPlayer, len(users))
+  for i, u := range users {
+    cnv[i] = &pbcommon.KyberPlayer{
+      Id:   u.ID,
+      Name: u.Name,
+    }
+  }
+  
+  return &pbapi.ModeratorList{Users: cnv}, nil
+}
+```
+
+## Running Server Commands
+
+Moderators can run administrative commands on the server:
+
+<Steps>
+  <Step title="Open Command Console">
+    Access the server command interface.
+  </Step>
+  
+  <Step title="Enter Command">
+    Type a valid server command.
+  </Step>
+  
+  <Step title="Execute">
+    The command is sent to the server and logged.
+  </Step>
+</Steps>
+
+From source/API/internal/rpc/server_management.go:201-214:
+
+```go
+func (s *ServerManagement) RunCommand(ctx context.Context, req *pbapi.ServerRunCommandRequest) (*pbcommon.Empty, error) {
+  server, user, err := s.isModerator(ctx, req.GetId())
+  
+  logger.L().Info("User is running command on server", 
+    zap.String("user_id", user.ID), 
+    zap.String("server_id", server.ID), 
+    zap.String("command", req.GetCommand()))
+
+  s.sm.RunCommand(server.ID, req.GetCommand())
+
+  consoleMessage := fmt.Sprintf("[MODERATOR] %s (%s) ran command: %s", user.Name, user.ID, req.GetCommand())
+  s.sm.PublishConsoleMessage(server.ID, consoleMessage, false)
+}
+```
+
+### Common Commands
+
+```bash
+# Change map/mode
+ServerTravel MapPath GameMode
+
+# Adjust ticket counts
+SetTicketCount 200
+
+# Broadcast message
+ServerMessage "Welcome to the server!"
+
+# Kick by name (if supported)
+Kick PlayerName
+
+# Change time limit
+SetTimeLimit 600
+```
+
+<Warning>
+Server commands are logged with your name and user ID. All moderators can see who ran what command.
+</Warning>
+
+## Viewing Punishment History
+
+Access the full punishment log for your server:
+
+### Punishment List
+
+The punishment list displays:
+
+- Player name and ID
+- Punishment type (kick/ban)
+- Reason provided
+- Moderator who issued it
+- Timestamp
+- Expiration (for temporary bans)
+- Overturn status
+
+From source/API/internal/rpc/server_management.go:61-108:
+
+```go
+func (s *ServerManagement) GetPunishments(ctx context.Context, req *pbapi.PunishmentsRequest) (*pbapi.PunishmentsResponse, error) {
+  server, _, err := s.isModerator(ctx, req.GetServerId())
+  
+  punishments, err := s.store.Punishments.GetBansForServer(ctx, server.HostID)
+  
+  // Fetch user data for each punishment
+  bannedUserIDs := make([]string, 0)
+  for _, punishment := range punishments {
+    if !slices.Contains(bannedUserIDs, *punishment.User) {
+      bannedUserIDs = append(bannedUserIDs, *punishment.User)
+    }
+  }
+  
+  users, err := s.store.Users.SearchByIDs(ctx, bannedUserIDs)
+}
+```
+
+### Filtering Punishments
+
+Filter the list by:
+
+- Active vs overturned bans
+- Kick vs ban types
+- Date range
+- Specific moderators
+- Player names
+
+## Best Practices
+
+### Clear Communication
+
+<CardGroup cols={2}>
+  <Card title="Provide Reasons" icon="comment">
+    Always include specific reasons for kicks and bans
+  </Card>
+  
+  <Card title="Document Rules" icon="book">
+    Share server rules in your description or Discord
+  </Card>
+  
+  <Card title="Warning System" icon="triangle-exclamation">
+    Warn players before kicking for minor infractions
+  </Card>
+  
+  <Card title="Consistent Enforcement" icon="balance-scale">
+    Apply rules fairly to all players
+  </Card>
+</CardGroup>
+
+### Moderator Management
+
+- **Trust your team**: Only add moderators you trust
+- **Review actions**: Regularly check the punishment log
+- **Communicate**: Coordinate with your moderation team
+- **Update regularly**: Remove inactive moderators
+
+### Punishment Guidelines
+
+**Kicks**: For minor or first-time offenses
+- Excessive team killing
+- Mild toxic behavior
+- AFKing in important roles
+
+**Temporary Bans**: For repeat offenders or serious issues
+- Multiple warnings ignored
+- Continued toxic behavior
+- Exploiting glitches
+
+**Permanent Bans**: For severe violations
+- Cheating/hacking
+- Severe harassment
+- Doxing or threats
+
+## Troubleshooting
+
+### Can't Access Moderation Panel
+
+If you can't access moderation tools:
+
+1. Verify you're the server host or assigned moderator
+2. Check that the server is still active
+3. Ensure you're logged into the correct account
+4. Try refreshing the server list
+
+### Moderator Permissions Not Working
+
+From source/API/pkg/models/server.go:128-140:
+
+```go
+func (server *ServerModel) CanManage(host *UserModel, user *UserModel) bool {
+  if user == nil || server == nil {
+    return false
+  }
+
+  if !user.Entitled(EntitlementGlobalServerModerator) &&
+    user.ID != server.HostID &&
+    !slices.Contains(host.ModeratorUserIDs, user.ID) {
+    return false
+  }
+
+  return true
+}
+```
+
+Permissions require:
+- Valid user account
+- Active server
+- Host relationship OR moderator assignment OR global entitlement
+
+### Bans Not Working
+
+If banned players can still join:
+
+1. Check the ban is active (not expired or overturned)
+2. Verify you banned the correct user ID
+3. Ensure the server is properly connected to Kyber API
+4. Check punishment logs for errors
+
+## API Integration
+
+For advanced use cases, moderation tools are available via the Kyber API:
+
+### Endpoints
+
+```protobuf
+service ServerManagement {
+  rpc KickPlayer(ServerKickPlayerRequest) returns (Empty);
+  rpc BanPlayer(ServerBanPlayerRequest) returns (Empty);
+  rpc UnbanPlayer(UnbanPlayerRequest) returns (Empty);
+  rpc GetPunishments(PunishmentsRequest) returns (PunishmentsResponse);
+  rpc AddModerator(AddModeratorRequest) returns (Empty);
+  rpc RemoveModerator(RemoveModeratorRequest) returns (Empty);
+  rpc GetModerators(ModeratorsRequest) returns (ModeratorList);
+  rpc RunCommand(ServerRunCommandRequest) returns (Empty);
+  rpc ModeratedServers(Empty) returns (ServerList);
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Host a Server" icon="server" href="/guides/hosting-servers">
+    Learn how to host your own server
+  </Card>
+  <Card title="Map Rotations" icon="map" href="/guides/map-rotations">
+    Create engaging map rotations
+  </Card>
+</CardGroup>

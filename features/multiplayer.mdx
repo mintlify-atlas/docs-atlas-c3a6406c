@@ -1,0 +1,356 @@
+---
+title: 'Community-Hosted Multiplayer'
+description: 'Host and join custom multiplayer servers with full mod support and dedicated server capabilities'
+icon: 'users'
+---
+
+Kyber enables community-hosted multiplayer for Star Wars Battlefront II, allowing anyone to create custom servers with mods, custom maps, and unique gameplay experiences.
+
+## How It Works
+
+Kyber replaces EA's multiplayer infrastructure with a community-driven system:
+
+<Steps>
+  <Step title="Launch Kyber">
+    Open the Kyber Launcher instead of launching Battlefront II directly
+  </Step>
+  <Step title="Browse or Host">
+    Use the Server Browser to find matches, or create your own server
+  </Step>
+  <Step title="Automatic Connection">
+    Kyber handles all connection, authentication, and mod loading automatically
+  </Step>
+  <Step title="Play">
+    Join matches with mods, custom content, and community features
+  </Step>
+</Steps>
+
+## Architecture
+
+Kyber's multiplayer system consists of several components working together:
+
+### Game Module
+
+The Kyber Module (C++ DLL) is injected into the game client:
+
+- **Network Interception**: Redirects network traffic from EA servers to Kyber proxies
+- **Mod Loading**: Loads and applies mods using the ModLoader system
+- **Authentication**: Handles Kyber authentication and session management
+- **VoIP Integration**: Provides proximity voice chat capabilities
+
+### Proxy Network
+
+Kyber's proxy infrastructure routes game traffic:
+
+- **Geographic Distribution**: Proxies deployed in multiple regions worldwide
+- **Low Latency**: Optimized routing for minimal ping increase
+- **Secure Connection**: Encrypted traffic between client and proxy
+- **Load Balancing**: Automatic distribution across available proxies
+
+### API Backend
+
+The Kyber API manages the multiplayer ecosystem:
+
+- **Server Registry**: Tracks all active servers and their status
+- **User Authentication**: Manages user accounts and entitlements
+- **Mod Hosting**: CDN for community-uploaded mod files
+- **Match History**: Stores player statistics and match data
+
+## Hosting Servers
+
+### Server Types
+
+<CardGroup cols={2}>
+  <Card title="Listen Server" icon="desktop">
+    Host while playing on your own PC. Quick setup, suitable for casual matches with friends.
+  </Card>
+  <Card title="Dedicated Server" icon="server">
+    Run a server without playing. Better performance and stability for serious communities.
+  </Card>
+</CardGroup>
+
+### Listen Server Setup
+
+Host a server directly from the launcher:
+
+1. **Navigate to Host Tab**: Click "Host Server" in the launcher
+2. **Configure Settings**:
+   - Server name (3-40 characters)
+   - Optional description and password
+   - Max players (1-64)
+   - Map and game mode selection
+3. **Select Mods**: Choose which mods to require (optional)
+4. **Launch**: Click "Start Server" to begin hosting
+
+<Info>
+Listen servers run on your PC while you play. When you close the game, the server stops.
+</Info>
+
+### Dedicated Server Setup
+
+For 24/7 servers or larger communities:
+
+<Warning>
+Dedicated servers require a separate PC or server running Battlefront II in headless mode.
+</Warning>
+
+1. **Prepare Server Environment**:
+   - Windows PC or server with Battlefront II installed
+   - Stable internet connection
+   - Adequate CPU and RAM (8GB+ recommended)
+
+2. **Use Kyber CLI**:
+   ```bash
+   kyber-server --config server-config.json
+   ```
+
+3. **Configure Auto-Restart**: Set up monitoring to restart on crashes
+
+4. **Server Configuration**: Edit `server-config.json`:
+   ```json
+   {
+     "name": "My 24/7 Server",
+     "description": "Always-online community server",
+     "max_players": 40,
+     "rotation": [
+       {"map": "Geonosis", "mode": "Supremacy"},
+       {"map": "Kashyyyk", "mode": "Supremacy"}
+     ],
+     "mods": [],
+     "region": "us-ashburn"
+   }
+   ```
+
+### Server Management
+
+Once your server is running:
+
+- **Server Token**: Secure token authenticates your server with Kyber API
+- **Real-Time Updates**: Server state syncs automatically to the server browser
+- **Moderator Controls**: Assign moderators to help manage your community
+- **Admin Commands**: In-game console commands for server control
+
+## Map Rotation
+
+### Automatic Rotation
+
+Servers can cycle through multiple maps and modes:
+
+- **Time-Based**: Rotate after X minutes
+- **Round-Based**: Rotate after each match completes
+- **Vote System**: Players vote for next map (coming soon)
+
+### Custom Maps
+
+Kyber supports custom maps created by the modding community:
+
+1. **Include Map Mod**: Add the custom map mod to your server's required mods
+2. **Set in Rotation**: Reference the custom map in your rotation config
+3. **Auto-Download**: Players automatically download the map mod when joining
+
+<Tip>
+Use map preview images to showcase custom maps in the server browser. Place images in the server metadata.
+</Tip>
+
+## Mod Support
+
+### Server-Side Mods
+
+Servers can require specific mods:
+
+- **Gameplay Mods**: Change game mechanics, add content, balance tweaks
+- **Custom Content**: New maps, modes, weapons, heroes
+- **Cosmetic Mods**: Skins and visual changes (optional for clients)
+
+### Mod Distribution
+
+<Check>
+Kyber automatically handles mod distribution:
+</Check>
+
+1. **Nexus Mods Integration**: Link mods directly from Nexus Mods
+2. **Kyber CDN**: Upload mods to Kyber's CDN for faster downloads
+3. **Version Enforcement**: Ensures all players have exact mod versions
+
+### Exploded Mods
+
+For mod packs and collections:
+
+- **Bundle Support**: Mods can contain multiple sub-mods
+- **Dependency Resolution**: Automatic handling of mod dependencies
+- **Efficient Downloads**: Only download missing components
+
+## Player Management
+
+### Moderation Tools
+
+<AccordionGroup>
+  <Accordion title="Kick Players">
+    Remove disruptive players from your server immediately.
+    
+    ```
+    /kick PlayerName [reason]
+    ```
+  </Accordion>
+
+  <Accordion title="Ban Players">
+    Permanently ban players from your server.
+    
+    ```
+    /ban PlayerID [duration] [reason]
+    ```
+  </Accordion>
+
+  <Accordion title="Mute Players">
+    Mute players in voice chat or text chat.
+    
+    ```
+    /mute PlayerName [duration]
+    ```
+  </Accordion>
+
+  <Accordion title="Assign Moderators">
+    Grant moderation permissions to trusted players.
+    
+    Add moderator user IDs to your server configuration.
+  </Accordion>
+</AccordionGroup>
+
+### Server Rules
+
+Set custom rules displayed to players:
+
+- **MOTD (Message of the Day)**: Shown when players join
+- **Rule Enforcement**: Use moderation tools to enforce your rules
+- **Auto-Moderation**: Configure filters for chat and behavior (coming soon)
+
+## Performance Optimization
+
+### Server Performance
+
+Optimize your server for the best experience:
+
+<CardGroup cols={2}>
+  <Card title="CPU Utilization" icon="microchip">
+    Battlefront II is CPU-intensive. Use a modern CPU with high single-thread performance.
+  </Card>
+  <Card title="Network Bandwidth" icon="network-wired">
+    Ensure sufficient upload bandwidth. ~1 Mbps per player recommended.
+  </Card>
+  <Card title="Region Selection" icon="globe">
+    Host in the region closest to your target players for lowest latency.
+  </Card>
+  <Card title="Player Limits" icon="users-rectangle">
+    Don't exceed your hardware capabilities. Start with 20-40 players and scale up.
+  </Card>
+</CardGroup>
+
+### Client Performance
+
+Players connecting to servers:
+
+- **Proxy Routing**: Traffic routes through nearest Kyber proxy
+- **Ping Display**: Real-time ping shown in server browser
+- **Auto-Optimization**: Kyber selects best proxy path automatically
+
+## Verification & Official Servers
+
+### Server Verification
+
+<Info>
+Verified servers are reviewed by the Kyber team and meet quality standards.
+</Info>
+
+Benefits of verified status:
+
+- **Verified Badge**: Special badge in server browser
+- **Higher Visibility**: Featured placement in server list
+- **Community Trust**: Players know the server is well-maintained
+
+### Official Servers
+
+Kyber hosts official servers:
+
+- **Always Available**: 24/7 uptime guarantee
+- **Multiple Regions**: Servers in all major geographic areas
+- **Vanilla & Modded**: Both vanilla and popular mod configurations
+- **Event Servers**: Special servers for community events
+
+## Server Events
+
+Host special event servers:
+
+- **Event Badge**: Mark your server as an event in the browser
+- **Scheduled Events**: Use Discord or community channels to announce times
+- **Custom Rules**: Temporary rule changes for special matches
+- **Tournament Support**: Structured competitive matches
+
+## Troubleshooting
+
+### Connection Issues
+
+<AccordionGroup>
+  <Accordion title="Cannot Join Server">
+    **Common causes:**
+    - Missing required mods
+    - Server is full
+    - Incorrect password
+    - Version mismatch
+    
+    **Solution:** Check server requirements in the info panel, download missing mods, and verify you're running the latest Kyber version.
+  </Accordion>
+
+  <Accordion title="High Ping">
+    **Common causes:**
+    - Server in distant region
+    - Network congestion
+    - Proxy routing issues
+    
+    **Solution:** Filter servers by your region, check your internet connection, restart Kyber to reconnect to proxies.
+  </Accordion>
+
+  <Accordion title="Disconnects During Match">
+    **Common causes:**
+    - Unstable internet
+    - Server crash
+    - Mod conflicts
+    
+    **Solution:** Verify mod installations, check server status, ensure stable connection.
+  </Accordion>
+</AccordionGroup>
+
+### Hosting Issues
+
+<AccordionGroup>
+  <Accordion title="Server Not Appearing in Browser">
+    **Check:**
+    - Server token is valid
+    - Network allows outbound connections
+    - Kyber API is reachable
+    - Server heartbeat is working
+  </Accordion>
+
+  <Accordion title="Players Can't Connect">
+    **Verify:**
+    - Firewall allows game traffic
+    - Proxy routing is configured
+    - Mod links are valid and accessible
+  </Accordion>
+</AccordionGroup>
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Server Browser" icon="server" href="/features/server-browser">
+    Browse and join active servers
+  </Card>
+  <Card title="Mod Support" icon="puzzle-piece" href="/features/mod-support">
+    Learn about mod integration
+  </Card>
+  <Card title="Voice Chat" icon="microphone" href="/features/voice-chat">
+    Enable proximity voice chat
+  </Card>
+  <Card title="Collections" icon="layer-group" href="/features/collections">
+    Manage server mod configurations
+  </Card>
+</CardGroup>

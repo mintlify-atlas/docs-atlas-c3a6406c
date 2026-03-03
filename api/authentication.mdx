@@ -1,0 +1,293 @@
+---
+title: Authentication API
+description: gRPC API for user authentication, account linking, and token management
+---
+
+The Authentication API handles user login, verification, and account management through gRPC. All methods require proper authentication unless otherwise noted.
+
+## Service Definition
+
+The Authentication service is defined in `kyber_api.proto`:
+
+```protobuf
+service Authentication {
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc Verify(kyber_common.Empty) returns (VerifyResponse);
+  rpc ResetToken(kyber_common.Empty) returns (kyber_common.Empty);
+  rpc PatreonLogin(AuthCodeRequest) returns (UserVerificationResponse);
+  rpc LinkPatreonAccount(LinkPatreonAccountRequest) returns (kyber_common.Empty);
+  rpc UnlinkPatreonAccount(kyber_common.Empty) returns (kyber_common.Empty);
+  rpc UnlinkDiscordAccount(kyber_common.Empty) returns (kyber_common.Empty);
+}
+```
+
+## Authentication Methods
+
+### Login
+
+Authenticates a user using their EA token and returns Kyber credentials.
+
+**Endpoint:** `Authentication.Login`
+
+**Request:**
+
+<ParamField path="token" type="string" required>
+  EA authentication token (JWT)
+</ParamField>
+
+**Response:**
+
+<ResponseField name="id" type="string">
+  User ID (equals EA persona ID)
+</ResponseField>
+
+<ResponseField name="token" type="string">
+  Kyber authentication token for subsequent requests
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  User's display name
+</ResponseField>
+
+<ResponseField name="isPatreon" type="boolean">
+  Whether the user is a Patreon supporter
+</ResponseField>
+
+<ResponseField name="entitlements" type="string[]">
+  List of user entitlements and permissions
+</ResponseField>
+
+<ResponseField name="discord" type="DiscordUserData" optional>
+  Linked Discord account information, if available
+</ResponseField>
+
+**Authentication:** None (this is the login endpoint)
+
+**Implementation:** `API/internal/rpc/authentication.go:386`
+
+**Validation:**
+- Validates EA token using JWKS
+- Checks if EA account is active (not banned/suspended)
+- Verifies user has persona information
+- Enforces whitelist if enabled
+- Checks for global bans
+- Detects and blocks VPN connections (for new users)
+
+---
+
+### Verify
+
+Verifies the current user's authentication token and returns user information.
+
+**Endpoint:** `Authentication.Verify`
+
+**Request:** Empty
+
+**Response:**
+
+<ResponseField name="id" type="string">
+  User ID
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  User's display name
+</ResponseField>
+
+<ResponseField name="discord" type="DiscordUserData" optional>
+  Linked Discord account information
+</ResponseField>
+
+**Authentication:** Required (Kyber token)
+
+**Implementation:** `API/internal/rpc/authentication.go:352`
+
+---
+
+### Reset Token
+
+Generates a new authentication token for the current user, invalidating the previous token.
+
+**Endpoint:** `Authentication.ResetToken`
+
+**Request:** Empty
+
+**Response:** Empty (success)
+
+**Authentication:** Required (Kyber token)
+
+**Implementation:** `API/internal/rpc/authentication.go:372`
+
+---
+
+## Patreon Integration
+
+### Patreon Login
+
+Authenticates using a Patreon OAuth authorization code.
+
+**Endpoint:** `Authentication.PatreonLogin`
+
+**Request:**
+
+<ParamField path="authCode" type="string" required>
+  OAuth authorization code from Patreon
+</ParamField>
+
+**Response:**
+
+<ResponseField name="userId" type="string">
+  Patreon user ID
+</ResponseField>
+
+<ResponseField name="membershipId" type="string">
+  Patreon membership ID
+</ResponseField>
+
+<ResponseField name="tokenInfo" type="TokenInfo">
+  OAuth token information for future requests
+</ResponseField>
+
+**Authentication:** None
+
+**Implementation:** `API/internal/rpc/authentication.go:286`
+
+**Validation:**
+- Verifies active Patreon membership
+- Checks for valid tier subscription
+- Requires Discord account linked to Patreon
+
+---
+
+### Link Patreon Account
+
+Links a Patreon account to the current Kyber user.
+
+**Endpoint:** `Authentication.LinkPatreonAccount`
+
+**Request:**
+
+<ParamField path="token" type="string" required>
+  EA authentication token
+</ParamField>
+
+<ParamField path="patreonId" type="string" required>
+  Patreon user ID
+</ParamField>
+
+<ParamField path="membershipId" type="string" required>
+  Patreon membership ID
+</ParamField>
+
+**Response:** Empty (success)
+
+**Authentication:** Required (EA token in request)
+
+**Implementation:** `API/internal/rpc/authentication.go:160`
+
+**Validation:**
+- EA account must be active
+- Patreon membership must be active
+- Valid tier subscription required
+- Discord must be linked to Patreon
+- Prevents duplicate Discord account linking
+
+---
+
+### Unlink Patreon Account
+
+Removes the Patreon account link from the current user.
+
+**Endpoint:** `Authentication.UnlinkPatreonAccount`
+
+**Request:** Empty
+
+**Response:** Empty (success)
+
+**Authentication:** Required (Kyber token)
+
+**Implementation:** `API/internal/rpc/authentication.go:133`
+
+**Note:** This also regenerates the user's Kyber token.
+
+---
+
+## Discord Integration
+
+### Unlink Discord Account
+
+Removes the Discord account link from the current user.
+
+**Endpoint:** `Authentication.UnlinkDiscordAccount`
+
+**Request:** Empty
+
+**Response:** Empty (success)
+
+**Authentication:** Required (Kyber token)
+
+**Implementation:** `API/internal/rpc/authentication.go:264`
+
+---
+
+## Data Models
+
+### DiscordUserData
+
+```protobuf
+message DiscordUserData {
+  string id = 1;
+  string username = 2;
+  string discriminator = 3;
+  string avatarHash = 4;
+  string globalName = 5;
+}
+```
+
+### TokenInfo
+
+```protobuf
+message TokenInfo {
+  string accessToken = 1;
+  uint64 expiresIn = 2;
+  string tokenType = 3;
+  string scope = 4;
+  string refreshToken = 5;
+  string version = 6;
+}
+```
+
+## Error Codes
+
+The Authentication API uses standard gRPC status codes:
+
+- `UNAUTHENTICATED` (16) - Invalid or missing authentication token
+- `PERMISSION_DENIED` (7) - User is banned, account is inactive, or not whitelisted
+- `INTERNAL` (13) - Server-side error
+- `UNIMPLEMENTED` (12) - Patreon features are disabled
+- `NOT_FOUND` (5) - User or resource not found
+- `ALREADY_EXISTS` (6) - Account already linked
+
+## Authentication Flow
+
+1. **Initial Login**: Client calls `Login` with EA token
+2. **Receive Kyber Token**: Server validates EA token and returns Kyber token
+3. **Subsequent Requests**: Client includes Kyber token in metadata header
+4. **Token Verification**: Server uses interceptor to validate token on each request
+5. **Optional**: Link Patreon/Discord accounts for additional features
+
+## Configuration
+
+The Authentication service requires the following environment variables:
+
+- `PATREON_ACCESS_TOKEN` - Patreon API access token
+- `PATREON_CLIENT_SECRET` - Patreon OAuth client secret
+- `PATREON_CLIENT_ID` - Patreon OAuth client ID
+- `WHITELIST_ENABLED` - Enable/disable whitelist enforcement (default: true)
+- `KYBER_EA_BRIDGE` - EA Bridge gRPC service address
+
+## Rate Limiting
+
+- EA username refresh: Every 7 days
+- Discord data refresh: Every 24 hours
+- EA entitlement check: Every 48 hours
+- Patreon membership check: Every 24 hours

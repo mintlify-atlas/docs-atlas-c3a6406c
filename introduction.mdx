@@ -1,0 +1,104 @@
+---
+title: Welcome to Kyber
+description: Open-source private server platform for Star Wars Battlefront II (2017)
+---
+
+<img src="https://s3.kyber.gg/frontend-assets/images/kb-github-readme-header.png" alt="Kyber Logo" />
+
+## What is Kyber?
+
+Kyber is an open-source private server tool for Star Wars™ Battlefront™ II (2017) that brings the community together with custom servers, mods, and enhanced gameplay features.
+
+Built as a complete platform with a monorepo structure, Kyber provides everything you need to host and play on custom servers with friends.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Custom Servers" icon="server">
+    Host your own servers with custom game modes, maps, and player counts. Group servers together for seamless matchmaking.
+  </Card>
+  
+  <Card title="Mod Support" icon="puzzle-piece">
+    Browse, download, and manage mods directly from Nexus Mods. Support for Frosty collections and custom map rotations.
+  </Card>
+  
+  <Card title="Proximity Voice Chat" icon="microphone">
+    Built-in voice chat with push-to-talk support. Customize input/output devices without leaving the game.
+  </Card>
+  
+  <Card title="Discord Integration" icon="discord">
+    Link your Discord account for rich presence and seamless community integration with Patreon supporter benefits.
+  </Card>
+  
+  <Card title="Stats & Progression" icon="chart-line">
+    Track your gameplay statistics across official and custom servers with full EA account integration.
+  </Card>
+  
+  <Card title="Cross-Platform Tools" icon="toolbox">
+    Complete suite including Launcher (Flutter), Module (C++), API (Go), Proxy (Rust), and CLI tools.
+  </Card>
+</CardGroup>
+
+## Platform Architecture
+
+Kyber is developed using a monorepo structure with multiple specialized components:
+
+| Component | Technology | Description |
+|-----------|------------|-------------|
+| **Module** | C++ | Game module injected into the Battlefront II client |
+| **Launcher** | Flutter/Dart | Desktop application for managing servers and mods |
+| **Proxy** | Rust | High-performance server proxy |
+| **API** | Go | Backend API service |
+| **CLI** | Flutter/Dart | Command-line interface tools |
+| **Packages** | Dart | Shared libraries and utilities |
+
+## Getting Started
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Download the launcher and join your first server in minutes
+  </Card>
+  
+  <Card title="Installation Guide" icon="download" href="/installation">
+    Detailed installation instructions for all platforms
+  </Card>
+  
+  <Card title="Building from Source" icon="code" href="/development/building">
+    Compile Kyber components from source code
+  </Card>
+  
+  <Card title="Contributing" icon="code-pull-request" href="/development/overview">
+    Join the development community and contribute to Kyber
+  </Card>
+</CardGroup>
+
+## Community
+
+<CardGroup cols={3}>
+  <Card title="Discord" icon="discord" href="https://discord.gg/kyber">
+    Join our Discord community
+  </Card>
+  
+  <Card title="Twitter" icon="x-twitter" href="https://x.com/KyberServers">
+    Follow @KyberServers
+  </Card>
+  
+  <Card title="Website" icon="globe" href="https://kyber.gg">
+    Visit kyber.gg
+  </Card>
+</CardGroup>
+
+## Open Source
+
+Kyber is licensed under GPL-3.0 and welcomes contributions from the community. Whether you're fixing bugs, adding features, or improving documentation, your help is appreciated.
+
+<Info>
+  For major changes, please open an issue first to discuss what you would like to change.
+</Info>
+
+## Maintainers
+
+- **Liam** - API, CLI, Launcher, Proxy
+- **Magix** - Module
+
+And a special thanks to all our [contributors](https://github.com/ArmchairDevelopers/Kyber/graphs/contributors) who help make Kyber better every day.

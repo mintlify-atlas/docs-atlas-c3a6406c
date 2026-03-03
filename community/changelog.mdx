@@ -1,0 +1,367 @@
+---
+title: "Changelog"
+description: "Release history and version changes for Kyber"
+icon: "clock-rotate-left"
+---
+
+<Note>
+  This changelog tracks all versions of Kyber 2.0. For the complete changelog including all beta versions, see the [GitHub repository](https://github.com/ArmchairDevelopers/Kyber).
+</Note>
+
+## [2.0.0-beta9]
+
+### Fixed
+- Stats on official servers not updating
+- "The title is installed in a language you are not entitled to play" for some users
+  - Module path moved to `C:\ProgramData\Kyber\Module` to prevent issues with non-ASCII characters
+- Issue where it was not possible to download mods for a full server
+- All instances of a server group showing the same map in the server browser
+- Launcher greying out when a server group was full
+- JSON file map rotation imports
+- "CREATE NEW COLLECTION" button greying out on the server host page
+- Stats page softlocking when failing to load EA stats
+- All content disappearing when Maxima failed to start the game
+  - Added warning dialog when trying to start a game with an expired EA session
+
+### Added
+- New filter options to the mods page
+  - Filter mods by gameplay and cosmetic categories
+- Option to set custom icons for collections
+- Copy server link buttons
+
+### Changed
+- **Forced HDR to be always disabled**
+
+<Warning>
+  HDR is now permanently disabled due to compatibility issues with the Kyber module.
+</Warning>
+
+---
+
+## [2.0.0-beta8]
+
+### Major Changes
+- Changed how clients authenticate with servers
+  - Fixes an issue where it was possible to join full servers
+- New CDN for mod downloads
+  - Should improve download speeds for most users
+  - Reduces issues with downloads failing
+
+### Fixed
+- Crash regarding multiple levels being loaded when using Kyber.Restart
+- **Forced HDR to be always disabled**
+- 1 player bug (for the 4th time)
+
+### Added
+- Extracting progress now shown when installing mods
+  - Only works for .zip and .rar files
+  - .7z files won't show progress
+- Major overhaul of the download manager
+
+<Note>
+  If you encounter any issues with downloads after this update, please report them in our [Discord server](https://discord.gg/kyber).
+</Note>
+
+---
+
+## [2.0.0-beta7]
+
+### Major Features
+- **Discord linking**
+  - Link your Discord account to your Kyber account in settings
+  - Patreon supporters have Discord linked automatically after login
+- **Proximity voice chat improvements**
+  - Push to talk option added
+  - Switch input/output devices without being in-game
+  - In-game icons for proximity voice chat
+
+### Fixed
+- Launcher failing to check if user is logged in to Nexus Mods
+- Proximity voice chat not working
+- Game sometimes crashing when using `Kyber.Restart`
+- Launcher getting stuck at "Updating Module"
+- Stats on official servers not updating
+- Mods list on host page not refreshing after filesystem change
+
+### Added
+- Updated join modal UI
+- Collections can now be saved by pressing `Enter` in the name input
+- Files in the `MISCELLANEOUS FILES` category now displayed in mod browser
+
+### Changed
+- Proxies now pinged multiple times for more accurate ping values
+- EA usernames should update again on KYBER after name change
+  - Can take up to 7 days for username to update
+- Launcher now clears Nexus Mods cache between versions
+- Mod browser cache moved to system temp folder
+
+---
+
+## [2.0.0-beta6]
+
+### Major Features
+- **Report system**
+  - Report users directly from in-game panel (press `INSERT`)
+  - Report users via profile search
+- **Custom modes and maps support**
+  - Map rotation builder now shows custom maps/modes
+  - Mods must implement the new format
+- **New server grouping system**
+  - Official servers grouped together
+  - Most popular instance selected by default
+  - Manual instance selection available in join dialog
+
+### Fixed
+- Downloads failing with "Request Range Not Satisfiable"
+- Setting paths with non-ASCII characters as mod path
+- Creating new Nexus Mods account in Launcher
+- Launcher turning invisible on startup
+- After name change, users unable to promote other players to moderators
+- EA usernames not updating on KYBER (can take up to 3 days)
+- (Maxima) Cloud Sync - fixes Battlefront 2 settings resetting after every game start
+
+### Added
+- Warning when trying to use more than 247 mods
+
+<Warning>
+  Using more than 247 mods may cause stability issues and crashes.
+</Warning>
+
+---
+
+## [2.0.0-beta5]
+
+### Fixed
+- **Proxy reconnection bug** - packets sent while reconnecting now reported as successful
+- Launcher not able to search for mods in Mod Browser
+- Launcher sometimes crashing while starting the game
+  - Windows 7 Compatibility Mode no longer needed
+- Promoting a player to moderator not working
+- Launcher not able to load proxies
+- Launcher loading wrong files when using a mod collection
+- Launcher not starting correctly and displaying white screen
+- Launcher sometimes failing to download mods with Nexus Mods Premium
+- Launcher turning grey when trying to join a server
+- Memory leak in the Module
+
+### Added
+- Region icons to server browser
+- Server password inputs now sensitive
+- Option to disable proximity chat
+- Option to shuffle teams between rounds (host setting)
+- Option to unlink or link Patreon account in settings
+- Warning when multiple big mod packs are used together
+- Usernames now displayed for punishments and moderators
+- Frosty Collection screenshots shown when inspecting them
+- (Maxima) Improved error messages
+
+### Changed
+- Potential fix for Patreon account linking issues
+- Removed "PLAY" button from server browser (EA servers still broken)
+  - To play offline, go to Mods page, select collection, and click "PLAY"
+
+---
+
+## [2.0.0-beta4]
+
+### Major Features
+- **New download manager**
+  - Pause, resume, and cancel downloads
+  - Download progress saved and restored on launcher restart
+- **Stats page** sneak peek
+- Improved mods page layout
+- Improved Nexus Mods search
+
+### Fixed
+- **Nexus Mods login loading indefinitely**
+
+### Added
+- Server list search and pagination
+- Selection of backgrounds for Launcher (Patrons only)
+- Mods can be dragged and dropped into other applications (e.g., Discord)
+- Updated credits page
+
+### Changed
+- Mod category `Map` now considered a gameplay category
+  - Mods with Map category required when joining a server
+- Improved loading times for affected files
+- Mods featured during setup now always up to date
+- Several minor UI improvements
+
+---
+
+## [2.0.0-beta3]
+
+### Added
+- New maintenance warning system
+- Several installer improvements
+
+### Fixed
+- Launcher not applying custom primary color during startup
+- Launcher couldn't start game due to "PanicException"
+
+---
+
+## [2.0.0-beta2]
+
+### Added
+- **Colorblind profiles**
+- Patrons can now change primary color and background of Launcher
+- "Auto" setting for proxy selector
+- Map rotation builder improvements:
+  - Redo and undo buttons
+  - Shuffle button
+  - Clear button
+
+### Fixed
+- Generated BSM file not being saved automatically
+- Launcher error when joining server or downloading mod (HandshakeException)
+- Frosty Import Dialog greying out
+- Server type filter
+- Launcher applying required gameplay mods twice when selecting cosmetic mod collection
+- Launcher failing to extract mods from RAR file
+- Launcher couldn't start game due to "PanicException"
+
+### Changed
+- Improved auto-updater
+  - Fixed bug where auto-updater couldn't close required processes
+
+---
+
+## [2.0.0-alpha9]
+
+### Added
+- New filter options for server browser
+- Overhauled settings page
+- Overhauled host page
+- Server descriptions
+- New punishment & moderation system
+
+### Fixed
+- Launcher displaying wrong maps in map rotation builder
+
+---
+
+## [2.0.0-alpha8]
+
+### Added
+- View mod descriptions, screenshots, and affected files
+- Automatic copy of mods when importing Frosty Packs
+
+### Fixed
+- Issue where downloads would not start
+
+---
+
+## [2.0.0-alpha7]
+
+### Major Features
+- **New Setup flow**
+- **New Nexus Mods API**
+  - No longer requires Chromium/Puppeteer
+  - Custom items per page setting
+  - Nexus Mods user profile pages
+- **BetterSabers support**
+  - Drag and drop ZIP file to install
+- New layout for Play, Host, Mods, Mod Browser, and Settings pages
+
+### Fixed
+- **Launcher crashing for some users when logging in to Nexus Mods**
+
+### Added
+- Auto Players settings on Host page
+- Server highlighting when hosted by EA friends
+- Delete installed mods on Mod Page
+- Mod extraction support for .rar and .7z files
+- Import Frosty Packs (Settings > Import From Frosty)
+- Nexus Mods Premium users get API-generated download links for faster downloads
+
+### Changed
+- Removed Chromium dependency
+  - Can remove `%appdata%\ArmchairDevelopers\Kyber\chromium` if not done automatically
+- Fixed issues with multiple Collection versions
+- Fixed drag and drop issues
+- Performance improvements
+
+### Known Issues
+- Resetting the Launcher does not work. Workaround: Click reset, close Launcher, and restart.
+
+---
+
+## [2.0.0-alpha4]
+
+### Major Features
+- **New and improved mod browser**
+- **Patreon integration**
+  - Link Patreon account for automatic whitelist
+  - Required for launcher access
+- Automatic mod downloads improved with new backend
+
+### Added
+- Press `INSERT` in-game to open moderation page
+- Download progress shown in taskbar
+- Improved drag and drop:
+  - Drag and drop download links
+  - Drag and drop NexusMods links to open mod page
+  - Drag and drop UI
+- Ability to duplicate mod collections
+- Improved error handling for Maxima
+- Improved notifications and settings page
+
+### Fixed
+- NexusMods login not working
+
+---
+
+## [2.0.0-alpha3] - May 28, 2024
+
+### Added
+- Automatic mod downloads now working (beta)
+  - Not all mods available yet
+  - Request specific mods on Discord
+- Password protected servers working
+- Launcher remembers size and position
+  - Can be disabled in settings
+
+---
+
+## [2.0.0-alpha2] - May 27, 2024
+
+### Added
+- Logout button for whitelist page
+- Shortcut to export logs: `Ctrl + Alt + Space`
+- Map rotation builder improvements (undo, redo, shuffle, clear)
+
+### Fixed
+- **KYBER not injecting properly**
+- Multiple scrollbar issues
+- Max player count on host page
+- Issue preventing downloads from Mod Browser
+- Auto-updater bug
+
+### Changed
+- Proximity Chat settings fixed
+
+---
+
+## [2.0.0-alpha1]
+
+### Added
+- Initial release of Kyber 2.0
+- Complete rewrite of the launcher
+- New server browser
+- Mod management system
+- Proximity voice chat
+- Custom server hosting
+- Map rotation builder
+- Nexus Mods integration
+
+---
+
+## Version History
+
+For the complete changelog with all technical details and older versions, visit the [GitHub repository](https://github.com/ArmchairDevelopers/Kyber/blob/main/CHANGELOG.md).
+
+<Card title="Report Issues" icon="github" href="https://github.com/ArmchairDevelopers/Kyber/issues">
+  Found a bug? Report it on GitHub
+</Card>

@@ -1,0 +1,352 @@
+---
+title: Statistics API
+description: gRPC API for player statistics, search, and data management
+---
+
+The Statistics API provides access to player statistics from multiple sources including EA, Kyber, and personal stats tracking.
+
+## Service Definition
+
+The Statistics service is defined in `kyber_api.proto`:
+
+```protobuf
+service Statistics {
+  rpc SearchUser(StatsSearchRequest) returns (StatsSearchResponse);
+  rpc GetStats(StatsRequest) returns (StatsResponse);
+  rpc UpdateStats(UpdateStatsRequest) returns (kyber_common.Empty);
+}
+```
+
+## User Search
+
+### Search User
+
+Searches for users by name to retrieve their statistics.
+
+**Endpoint:** `Statistics.SearchUser`
+
+**Request:**
+
+<ParamField path="query" type="string" required>
+  Search query (username or partial username)
+</ParamField>
+
+**Response:**
+
+<ResponseField name="users" type="EAUser[]">
+  Array of matching users
+</ResponseField>
+
+**Authentication:** Optional (public endpoint)
+
+**Implementation:** `API/internal/rpc/statistics.go:80`
+
+**Search Behavior:**
+- If Elasticsearch is configured, uses fuzzy prefix matching with Elasticsearch
+- Otherwise, falls back to MongoDB text search
+- Returns empty array if query is less than 1 character
+- Maximum 50 expansions for prefix matching
+
+**EAUser Object:**
+
+<ResponseField name="id" type="string">
+  User's EA/Kyber ID
+</ResponseField>
+
+<ResponseField name="personaId" type="string">
+  EA persona ID
+</ResponseField>
+
+<ResponseField name="username" type="string">
+  User's display name
+</ResponseField>
+
+<ResponseField name="region" type="string">
+  User's region
+</ResponseField>
+
+<ResponseField name="isKyberUser" type="boolean">
+  Whether the user has played on Kyber
+</ResponseField>
+
+---
+
+## Statistics Retrieval
+
+### Get Stats
+
+Retrieves player statistics from a specified source.
+
+**Endpoint:** `Statistics.GetStats`
+
+**Request:**
+
+<ParamField path="source" type="StatsSource" required>
+  Source to retrieve stats from (see StatsSource enum below)
+</ParamField>
+
+<ParamField path="user" type="string">
+  User ID (required for KYBER and PERSONAL sources)
+</ParamField>
+
+<ParamField path="personaId" type="string">
+  EA persona ID (required for EA_PC source)
+</ParamField>
+
+**Response:**
+
+<ResponseField name="stats" type="map<string, float>">
+  Dictionary of stat names to values
+</ResponseField>
+
+**Authentication:** Required for PERSONAL source; optional for others
+
+**Implementation:** `API/internal/rpc/statistics.go:194`
+
+**Stats Sources:**
+
+#### EA_PC (0)
+Retrieves statistics from EA's official servers for PC.
+
+- **Caching:** Results are cached in Redis to reduce EA API calls
+- **Requirements:** `personaId` must be provided
+- **Service:** Requires EA Bridge gRPC service (`KYBER_EA_BRIDGE`)
+- **Response Time:** Fast if cached; slower on first request
+
+#### KYBER (3)
+Retrieves statistics accumulated from Kyber servers.
+
+- **Caching:** No caching; reads directly from database
+- **Requirements:** `user` (Kyber user ID) must be provided
+- **Returns:** Empty stats object if user has no Kyber stats
+
+#### PERSONAL (4)
+Retrieves personal statistics for the authenticated user.
+
+- **Authentication:** Required (reads stats for authenticated user only)
+- **Use Case:** Private stat tracking per user
+- **Returns:** Error if stats don't exist
+
+---
+
+## Statistics Management
+
+### Update Stats
+
+Updates or creates statistics for a user.
+
+**Endpoint:** `Statistics.UpdateStats`
+
+**Request:**
+
+<ParamField path="source" type="StatsSource" required>
+  Source to update (currently only KYBER is supported)
+</ParamField>
+
+<ParamField path="user" type="string" required>
+  User ID to update stats for
+</ParamField>
+
+<ParamField path="stats" type="map<string, float>" required>
+  Complete stats dictionary with all stat keys and values
+</ParamField>
+
+**Response:** Empty (success)
+
+**Authentication:** Required (must have `EntitlementOfficialStats` for KYBER source)
+
+**Implementation:** `API/internal/rpc/statistics.go:279`
+
+**Validation:**
+- Only `KYBER` source can be updated via this endpoint
+- User must have `EntitlementOfficialStats` entitlement
+- Stats must include all existing keys (cannot provide partial updates)
+- Missing stat keys will result in `InvalidArgument` error
+
+---
+
+## Data Models
+
+### StatsSource Enum
+
+```protobuf
+enum StatsSource {
+  EA_PC = 0;      // EA official stats (PC platform)
+  EA_XBOX = 1;    // EA official stats (Xbox) - Not implemented
+  EA_PS4 = 2;     // EA official stats (PlayStation) - Not implemented
+  KYBER = 3;      // Kyber network stats
+  PERSONAL = 4;   // Personal user stats
+}
+```
+
+### Stats Dictionary
+
+Stats are returned as a key-value map where:
+- **Key**: Stat identifier (e.g., "kills", "deaths", "wins")
+- **Value**: Numeric stat value (float)
+
+Example stats object:
+```json
+{
+  "kills": 1234.0,
+  "deaths": 567.0,
+  "score": 98765.0,
+  "playtime": 12345.0,
+  "wins": 89.0
+}
+```
+
+### EAUser
+
+```protobuf
+message EAUser {
+  string id = 1;
+  string personaId = 2;
+  string username = 3;
+  string region = 4;
+  bool isKyberUser = 5;
+}
+```
+
+## Caching Strategy
+
+### EA Stats Caching
+
+EA statistics are cached using Redis to minimize external API calls:
+
+- **Cache Key:** `stats:{personaId}:{source}`
+- **TTL:** Configurable (typically 15-30 minutes)
+- **Cache Miss:** Fetches from EA Bridge service
+- **Cache Hit:** Returns immediately from Redis
+
+**Implementation:** `API/internal/cache/redis_stats.go`
+
+### Cache Methods
+
+```go
+// Get cached stats
+Get(ctx context.Context, personaId string, source StatsSource) (*UserStatsModel, error)
+
+// Set stats in cache
+Set(ctx context.Context, stats *UserStatsModel) error
+```
+
+## Elasticsearch Integration
+
+When configured, Elasticsearch provides fast user search:
+
+**Index:** `users-index`
+
+**Query Type:** `MatchPhrasePrefix` with:
+- **Slop:** 1 (allows one word gap)
+- **Max Expansions:** 50 (limits prefix matching)
+
+**Configuration:** Set `ELASTICSEARCH_URL` environment variable
+
+**Fallback:** If Elasticsearch is unavailable, falls back to MongoDB search
+
+## Error Codes
+
+- `NOT_FOUND` (5) - User or stats not found
+- `INVALID_ARGUMENT` (3) - Invalid source or insufficient stats provided
+- `PERMISSION_DENIED` (7) - Missing required entitlements
+- `INTERNAL` (13) - Database, cache, or service communication error
+- `UNAVAILABLE` (14) - EA Bridge service not available
+
+## Service Dependencies
+
+### Required Services
+
+1. **Database** - MongoDB for storing Kyber/Personal stats
+2. **Cache** - Redis for EA stats caching
+
+### Optional Services
+
+1. **EA Bridge** (`KYBER_EA_BRIDGE`) - Required for EA_PC stats
+2. **Elasticsearch** (`ELASTICSEARCH_URL`) - Enhances search performance
+
+## Implementation Notes
+
+### Stats Storage
+
+Stats are stored in the `stats` collection with:
+- **UserID** - Kyber user ID
+- **Source** - StatsSource identifier
+- **Stats** - Map of stat keys to values
+- **UpdatedBy** - ID of user/service that updated stats
+- **UpdatedAt** - Timestamp of last update
+
+### Stats Update Rules
+
+1. **Kyber Stats:**
+   - Can only be updated by users with `EntitlementOfficialStats`
+   - Must provide complete stat set (all existing keys)
+   - Partial updates are rejected to prevent data corruption
+
+2. **Personal Stats:**
+   - Can be updated by the owner
+   - No key validation
+
+3. **EA Stats:**
+   - Read-only via API
+   - Fetched from EA servers
+   - Cached for performance
+
+## Example Usage
+
+### Search for a User
+
+```protobuf
+// Request
+StatsSearchRequest {
+  query: "PlayerName"
+}
+
+// Response
+StatsSearchResponse {
+  users: [
+    {
+      id: "1234567890",
+      username: "PlayerName123",
+      isKyberUser: true
+    }
+  ]
+}
+```
+
+### Get EA Stats
+
+```protobuf
+// Request
+StatsRequest {
+  source: EA_PC,
+  personaId: "1234567890"
+}
+
+// Response
+StatsResponse {
+  stats: {
+    "kills": 5000.0,
+    "deaths": 2500.0,
+    "wins": 150.0
+  }
+}
+```
+
+### Update Kyber Stats
+
+```protobuf
+// Request (requires EntitlementOfficialStats)
+UpdateStatsRequest {
+  source: KYBER,
+  user: "1234567890",
+  stats: {
+    "kills": 5100.0,
+    "deaths": 2550.0,
+    "wins": 155.0
+  }
+}
+
+// Response
+Empty {}
+```

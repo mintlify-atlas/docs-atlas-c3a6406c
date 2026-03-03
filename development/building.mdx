@@ -1,0 +1,363 @@
+---
+title: Building KYBER
+description: Complete build instructions for all KYBER components
+---
+
+## Prerequisites
+
+Before building any KYBER component, ensure you have:
+
+- Cloned the repository with `--recurse-submodules` or run `git submodule --init --recursive`
+- Downloaded and installed [Protoc](https://github.com/protocolbuffers/protobuf/releases) and ensure `protoc` is in your `PATH`
+
+## Monorepo Structure
+
+KYBER uses a monorepo structure with the following components:
+
+| Component | Language | Description |
+|-----------|----------|-------------|
+| **Module** | C++ | Game module injected into the game client |
+| **Launcher** | Flutter/Dart | Desktop launcher application |
+| **CLI** | Flutter/Dart | Command-line interface tools |
+| **API** | Go | Backend API service |
+| **Proxy** | Rust | Server proxy |
+| **Packages** | Dart | Shared Dart packages |
+
+---
+
+## Dart/Flutter Projects
+
+The Launcher, CLI, and Packages are built using Flutter and Dart.
+
+### Prerequisites
+
+- [Flutter](https://flutter.dev) (master channel)
+- [Rust](https://rustup.rs) (nightly toolchain)
+- [Melos](https://melos.invertase.dev): `dart pub global activate melos`
+
+### Bootstrapping
+
+<Steps>
+  <Step title="Bootstrap the workspace">
+    From the repository root, run:
+    
+    ```bash
+    melos bootstrap
+    ```
+    
+    This command:
+    - Installs all dependencies
+    - Generates protocol buffer bindings
+    - Runs code generation
+    - Sets up FFI bindings
+  </Step>
+</Steps>
+
+---
+
+## Launcher
+
+The Launcher is a Flutter desktop application for Windows, macOS, and Linux.
+
+### Building the Launcher
+
+<Steps>
+  <Step title="Generate FFI bindings">
+    Navigate to the Launcher directory and generate FFI bindings:
+    
+    ```bash
+    cd Launcher
+    dart run tool/ffigen.dart
+    ```
+  </Step>
+  
+  <Step title="Run in debug mode">
+    Launch the application in development mode:
+    
+    ```bash
+    flutter run
+    ```
+  </Step>
+  
+  <Step title="Build release binaries">
+    Build for your target platform:
+    
+    <CodeGroup>
+    ```bash Windows
+    flutter build windows
+    ```
+    
+    ```bash macOS
+    flutter build macos
+    ```
+    
+    ```bash Linux
+    flutter build linux
+    ```
+    </CodeGroup>
+  </Step>
+</Steps>
+
+### Building the Installer (Windows)
+
+To build the Windows installer:
+
+1. Install [Inno Setup](https://jrsoftware.org/isinfo.php)
+2. Use the provided `installer.iss` script in the `installer` folder
+3. Compile with Inno Setup
+
+---
+
+## CLI
+
+The CLI provides command-line tools for KYBER management.
+
+### Building the CLI
+
+<Steps>
+  <Step title="Install dependencies">
+    Navigate to the CLI directory:
+    
+    ```bash
+    cd CLI
+    flutter pub get
+    ```
+  </Step>
+  
+  <Step title="Generate FFI bindings">
+    Generate Rust-Dart bindings:
+    
+    ```bash
+    flutter_rust_bridge_codegen generate
+    ```
+  </Step>
+  
+  <Step title="Build the CLI binary">
+    Build the CLI executable:
+    
+    ```bash
+    dart build cli bin/kyber_cli.dart
+    ```
+    
+    The binary will be output to `build/cli/<platform>/bundle/bin/`
+  </Step>
+</Steps>
+
+### Using the Built CLI
+
+<Warning>
+  The CLI requires additional runtime dependencies to function correctly.
+</Warning>
+
+<Steps>
+  <Step title="Copy Rust library">
+    Copy the Rust library from `build/cli/<platform>/bundle/lib/` next to the binary.
+  </Step>
+  
+  <Step title="Copy Maxima dependencies">
+    Build Maxima first, then copy the following files next to the binary:
+    
+    <CodeGroup>
+    ```text Windows
+    maxima-service.exe
+    maxima-bootstrap.exe
+    ```
+    
+    ```text Linux
+    maxima-bootstrap
+    ```
+    </CodeGroup>
+  </Step>
+</Steps>
+
+---
+
+## Module
+
+The KYBER Module is the C++ component that gets injected into the game client.
+
+<Warning>
+  The KYBER Module can **only** be compiled on Windows with MSVC.
+</Warning>
+
+### Prerequisites
+
+- Windows with MSVC (Visual Studio)
+- [Bazelisk](https://github.com/bazelbuild/bazelisk/releases) installed as `bazel.exe` in your `PATH`
+- [MSYS2](https://www.msys2.org/) installed to `C:\msys64`
+
+### Building the Module
+
+<Steps>
+  <Step title="Install Bazelisk">
+    Download [bazelisk-windows-amd64.exe](https://github.com/bazelbuild/bazelisk/releases/download/v1.25.0/bazelisk-windows-amd64.exe) and rename it to `bazel.exe`, then add it to your `PATH`.
+  </Step>
+  
+  <Step title="Create Bazel output directory">
+    Due to a bug with long build paths in Windows, create a short path for Bazel's intermediary files:
+    
+    ```bash
+    mkdir C:\bz
+    ```
+  </Step>
+  
+  <Step title="Install MSYS2">
+    Download and install [MSYS2](https://www.msys2.org/) to `C:\msys64`.
+  </Step>
+  
+  <Step title="Build the module">
+    From the repository root, run:
+    
+    ```bash
+    bazel --output_user_root="C:\bz" build --config=release Kyber
+    ```
+    
+    Alternatively, use the provided batch file:
+    
+    ```bash
+    .\build.bat
+    ```
+    
+    <Note>
+      This will take a while on first build. The module requires `--config=release` flag. Building without it (debug mode) will lead to crashes.
+    </Note>
+  </Step>
+</Steps>
+
+### Using the Built Module
+
+Once built, the module DLL is located at `Module/bazel-bin/Kyber.dll`. To test your changes:
+
+```bash
+copy Module\bazel-bin\Kyber.dll C:\ProgramData\Kyber\Module\Kyber.dll
+```
+
+### Code Completion
+
+The module is developed using Visual Studio Code with the clangd extension.
+
+To generate `compile_commands.json`:
+
+```bash
+cd Module
+clangd\refresh.bat
+```
+
+---
+
+## API
+
+The API service is written in Go and provides the backend API.
+
+### Prerequisites
+
+- Go 1.24 or later
+- Protocol buffer compiler with Go plugins:
+
+```bash
+go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+```
+
+### Building the API
+
+<Steps>
+  <Step title="Generate protocol buffers">
+    <CodeGroup>
+    ```bash Linux/macOS
+    cd API
+    ./scripts/gen-proto.sh
+    ```
+    
+    ```bash Windows
+    cd API
+    scripts\gen-proto.bat
+    ```
+    </CodeGroup>
+  </Step>
+  
+  <Step title="Build the binary">
+    <CodeGroup>
+    ```bash Linux/macOS
+    go build -o kyber-api ./cmd/server
+    ```
+    
+    ```bash Windows
+    go build -o kyber-api.exe ./cmd/server
+    ```
+    </CodeGroup>
+  </Step>
+</Steps>
+
+---
+
+## Proxy
+
+The Proxy component is written in Rust and handles server proxying.
+
+### Prerequisites
+
+- Rust nightly toolchain
+- Protocol buffer compiler (`protoc`)
+
+### Building the Proxy
+
+<Steps>
+  <Step title="Navigate to Proxy directory">
+    ```bash
+    cd Proxy
+    ```
+  </Step>
+  
+  <Step title="Build with Cargo">
+    ```bash
+    cargo build --release
+    ```
+    
+    The output binary will be located at `target/release/kyber_proxy`
+  </Step>
+</Steps>
+
+---
+
+## Troubleshooting
+
+### Submodule Issues
+
+If you encounter missing dependencies:
+
+```bash
+git submodule update --init --recursive
+```
+
+### Melos Bootstrap Failures
+
+If `melos bootstrap` fails:
+
+1. Ensure Flutter is on the master channel: `flutter channel master && flutter upgrade`
+2. Clean and retry:
+   ```bash
+   melos clean
+   melos bootstrap
+   ```
+
+### Module Build Path Issues
+
+If you encounter path-too-long errors on Windows:
+
+- Ensure you're using the `--output_user_root="C:\bz"` flag
+- Try moving the repository closer to the drive root
+
+### Missing Protoc
+
+If `protoc` is not found:
+
+1. Download from [Protocol Buffers Releases](https://github.com/protocolbuffers/protobuf/releases)
+2. Add the `bin` directory to your `PATH`
+3. Verify with: `protoc --version`
+
+## Next Steps
+
+<Card title="Architecture Overview" icon="sitemap" href="/development/architecture">
+  Learn about KYBER's system architecture and component interactions
+</Card>

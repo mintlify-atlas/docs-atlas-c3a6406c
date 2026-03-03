@@ -1,0 +1,420 @@
+---
+title: 'Proximity Voice Chat'
+description: 'Communicate with teammates using integrated proximity voice chat powered by Vivox'
+icon: 'microphone'
+---
+
+Kyber includes built-in proximity voice chat, allowing you to communicate with nearby players in real-time during multiplayer matches. Voice chat is spatially aware, meaning you only hear players close to your position.
+
+## Overview
+
+The voice chat system uses Vivox technology to provide low-latency, high-quality voice communication integrated directly into the game. Unlike traditional team-wide voice chat, Kyber's proximity system creates immersive, location-based communication.
+
+<Info>
+Voice chat is entirely optional. You can play without enabling it, or mute yourself at any time.
+</Info>
+
+## How Proximity Voice Works
+
+### Spatial Audio
+
+Voice chat in Kyber is proximity-based:
+
+- **Nearby Players**: Hear players within a certain radius of your character
+- **Volume Falloff**: Player voices get quieter as they move away
+- **Directional Audio**: Hear where voices are coming from (requires stereo/surround sound)
+- **Team Communication**: Coordinate with nearby squad members naturally
+
+<Check>
+Proximity voice creates authentic tactical communication, just like real soldiers coordinating in the field.
+</Check>
+
+### Talking Indicators
+
+See who's speaking:
+
+- **In-Game Indicators**: Visual indicators show when nearby players are talking
+- **Player Names**: Speaking players are highlighted in your HUD
+- **Mute Status**: See your own mute status on screen
+
+## Setting Up Voice Chat
+
+### First-Time Setup
+
+<Steps>
+  <Step title="Enable in Settings">
+    Open Settings > Audio and toggle "Enable Voice Chat"
+  </Step>
+  <Step title="Select Microphone">
+    Choose your input device from the microphone dropdown
+  </Step>
+  <Step title="Adjust Volume">
+    Set your input (microphone) and output (speaker) volumes
+  </Step>
+  <Step title="Test Audio">
+    Use the test feature to ensure your microphone works
+  </Step>
+</Steps>
+
+### Audio Device Selection
+
+#### Input Devices (Microphones)
+
+Choose from available microphones:
+
+- **Built-in Microphones**: Laptop or webcam microphones
+- **Headset Microphones**: Gaming headsets or USB headsets
+- **External Microphones**: Professional or studio microphones
+- **Virtual Devices**: Virtual audio cables or streaming software outputs
+
+#### Output Devices (Speakers/Headphones)
+
+Select where you hear other players:
+
+- **Default Speakers**: System default audio output
+- **Headphones**: Dedicated headphone output
+- **Surround Sound**: Multi-channel speaker systems
+- **Virtual Devices**: Audio routed to streaming or recording software
+
+<Tip>
+For the best directional audio experience, use headphones or a surround sound system.
+</Tip>
+
+## Voice Chat Controls
+
+### Push-to-Talk vs. Voice Activation
+
+<Tabs>
+  <Tab title="Push-to-Talk">
+    **Push-to-Talk (Recommended)**
+    
+    Hold a key to transmit:
+    
+    - **Default Key**: Can be configured in Settings > Controls
+    - **No Background Noise**: Only transmit when you want to talk
+    - **Better Privacy**: Full control over when your mic is active
+    
+    Best for:
+    - Noisy environments
+    - Mechanical keyboards
+    - Playing with others in the room
+  </Tab>
+  
+  <Tab title="Voice Activation">
+    **Voice Activation (Always On)**
+    
+    Microphone activates automatically when you speak:
+    
+    - **Hands-Free**: No key binding needed
+    - **Sensitivity Setting**: Adjust threshold for activation
+    - **Noise Gate**: Filters out quiet background noise
+    
+    Best for:
+    - Quiet environments
+    - Consistent communication
+    - When you need both hands on controls
+  </Tab>
+</Tabs>
+
+### In-Game Controls
+
+Quick controls during gameplay:
+
+- **Mute/Unmute**: Toggle your microphone on/off
+- **Deafen**: Disable all incoming voice (you won't hear anyone)
+- **Individual Muting**: Mute specific players (coming soon)
+
+### Console Commands
+
+Advanced users can use console commands:
+
+```bash
+# Mute yourself
+Kyber.VoipMute
+
+# List available capture devices
+Kyber.VoipListCaptureDevices
+
+# Set capture device by ID
+Kyber.VoipSetCaptureDevice <id>
+
+# Adjust input volume (0-100)
+Kyber.VoipSetInputVolume <volume>
+
+# Adjust speaker volume (0-100)
+Kyber.VoipSetSpeakerVolume <volume>
+```
+
+## Audio Settings
+
+### Volume Controls
+
+Fine-tune your audio experience:
+
+<AccordionGroup>
+  <Accordion title="Input Volume (Microphone Gain)">
+    Control how loud your voice is to others:
+    
+    - **Low Volume (20-40)**: For sensitive microphones or loud talkers
+    - **Medium Volume (50-70)**: Default, suitable for most setups
+    - **High Volume (80-100)**: For quiet microphones or soft speakers
+    
+    <Warning>
+    Avoid maxing out input volume as it can cause distortion and background noise.
+    </Warning>
+  </Accordion>
+
+  <Accordion title="Output Volume (Speaker Level)">
+    Control how loud other players sound:
+    
+    - Adjust to comfortable level for your speakers/headphones
+    - Independent from game sound effects and music
+    - Can be changed mid-game without affecting others
+  </Accordion>
+
+  <Accordion title="Voice Activation Sensitivity">
+    When using voice activation mode:
+    
+    - **Low Sensitivity**: Requires louder speech to activate
+    - **High Sensitivity**: Picks up quieter speech and background noise
+    - Test and adjust based on your environment
+  </Accordion>
+</AccordionGroup>
+
+### Audio Quality Settings
+
+- **Codec Selection**: Automatic selection of best available codec
+- **Bitrate**: Adjusts based on network conditions
+- **Echo Cancellation**: Prevents your speakers from feeding back into your mic
+- **Noise Suppression**: Reduces background noise automatically
+
+## Proximity Settings
+
+### Voice Range
+
+Configure how proximity works:
+
+- **Standard Range**: Default proximity radius (recommended)
+- **Extended Range**: Hear players from further away
+- **Close Range**: Only hear very nearby players
+
+<Info>
+Proximity ranges are server-controlled to ensure consistent experience across all players.
+</Info>
+
+### Team vs. Proximity
+
+Some servers offer different voice modes:
+
+- **Proximity Only**: Standard mode, hear nearby players regardless of team
+- **Team Channels**: Separate channels for each team (coming soon)
+- **Squad Channels**: Voice chat only within your squad (coming soon)
+
+## Voice Chat Etiquette
+
+### Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Use Push-to-Talk" icon="hand">
+    Prevent background noise and accidental transmissions
+  </Card>
+  <Card title="Check Your Mic" icon="microphone-lines">
+    Test audio before joining matches
+  </Card>
+  <Card title="Respect Others" icon="handshake">
+    Keep communication friendly and constructive
+  </Card>
+  <Card title="Adjust Volume" icon="volume-high">
+    Keep your input volume at reasonable levels
+  </Card>
+</CardGroup>
+
+### Common Courtesy
+
+- **Minimize Background Noise**: Mute when not actively communicating
+- **Avoid Music/Streams**: Don't play music through your mic
+- **Use Headphones**: Prevents echo and feedback
+- **Be Respectful**: Follow community guidelines and server rules
+
+## Privacy & Safety
+
+### Privacy Controls
+
+<Check>
+You have full control over voice chat:
+</Check>
+
+- **Opt-In System**: Voice chat is disabled by default
+- **Mute Anytime**: Instantly mute yourself with a key press
+- **Disable Completely**: Turn off voice chat entirely in settings
+- **No Recording**: Kyber doesn't record voice chat conversations
+
+### Reporting & Moderation
+
+<Warning>
+Harassment and abusive behavior is not tolerated.
+</Warning>
+
+If you encounter toxic behavior:
+
+1. **Mute the Player**: Immediately mute offensive players
+2. **Report to Server Admin**: Use in-game reporting tools
+3. **Report to Kyber**: Submit reports for platform-wide violations
+4. **Leave Server**: Find a better community if needed
+
+Server moderators can:
+- Mute abusive players
+- Ban players from voice chat
+- Permanently ban repeat offenders
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Can't Hear Other Players">
+    **Check:**
+    - Voice chat is enabled in settings
+    - Output volume is not at 0
+    - You're not deafened
+    - Other players are within proximity range
+    - Correct audio output device is selected
+    
+    **Solution:** Verify settings, test with a friend, check system audio mixer.
+  </Accordion>
+
+  <Accordion title="Others Can't Hear Me">
+    **Check:**
+    - Microphone is selected and working
+    - Input volume is not at 0
+    - You're not muted
+    - Push-to-talk key is bound and being pressed
+    - Microphone permissions are granted (Windows settings)
+    
+    **Solution:** Use the microphone test feature, verify device selection, check Windows privacy settings.
+  </Accordion>
+
+  <Accordion title="Echo or Feedback">
+    **Common causes:**
+    - Using speakers instead of headphones
+    - Microphone too close to speakers
+    - Input volume too high
+    
+    **Solution:** Use headphones, enable echo cancellation in settings, reduce input volume.
+  </Accordion>
+
+  <Accordion title="Robotic or Choppy Voice">
+    **Common causes:**
+    - Network latency or packet loss
+    - Low bandwidth
+    - CPU overload
+    
+    **Solution:** Check network connection, close bandwidth-heavy applications, reduce graphics settings.
+  </Accordion>
+
+  <Accordion title="Voice Chat Not Working At All">
+    **Check:**
+    - Vivox service is running (automatic)
+    - Firewall allows Kyber voice traffic
+    - Internet connection is stable
+    - Server supports voice chat
+    
+    **Solution:** Restart Kyber, check firewall settings, verify the server has voice chat enabled.
+  </Accordion>
+</AccordionGroup>
+
+## Technical Details
+
+### Vivox Integration
+
+Kyber uses Vivox for voice chat:
+
+- **Low Latency**: Optimized for real-time gaming communication
+- **High Quality**: Clear audio with automatic quality adjustment
+- **Scalability**: Supports many players simultaneously
+- **Cross-Platform**: Works across all supported Kyber platforms
+
+### Network Requirements
+
+- **Bandwidth**: ~50 Kbps per voice connection
+- **Latency**: Best experience with &lt;100ms ping to voice servers
+- **Ports**: Uses standard Vivox ports (UDP 5062-5082)
+
+### Audio Processing
+
+Kyber's VoIP system includes:
+
+- **Echo Cancellation**: Prevents feedback loops
+- **Noise Suppression**: Reduces background noise
+- **Automatic Gain Control**: Normalizes volume levels
+- **Jitter Buffer**: Smooths out network inconsistencies
+
+## Advanced Configuration
+
+### Audio Device Management
+
+Manage devices through settings or console:
+
+```bash
+# List all capture devices with IDs
+Kyber.VoipListCaptureDevices
+
+# Output example:
+# Capture devices:
+# 0: Headset Microphone (USB Audio)
+# 1: Built-in Microphone
+# 2: Virtual Cable Input
+# Select with Kyber.VoipSetCaptureDevice <id>
+
+# Select device 0
+Kyber.VoipSetCaptureDevice 0
+```
+
+### Fine-Tuning Audio
+
+<Tabs>
+  <Tab title="For Streamers">
+    Configure for streaming:
+    
+    - Use virtual audio cables to separate voice from game audio
+    - Route voice to specific OBS audio tracks
+    - Maintain privacy by controlling voice output
+    - Balance voice levels with game sounds
+  </Tab>
+  
+  <Tab title="For Competitive Players">
+    Optimize for competitive play:
+    
+    - Use push-to-talk for clean communication
+    - Enable directional audio for tactical awareness
+    - Keep voice volume balanced with game sounds
+    - Use noise suppression to eliminate distractions
+  </Tab>
+  
+  <Tab title="For Content Creators">
+    Best settings for content:
+    
+    - Record voice chat separately for editing flexibility
+    - Use moderate noise suppression to preserve authenticity
+    - Balance voice levels for viewer experience
+    - Consider proximity ranges for cinematic content
+  </Tab>
+</Tabs>
+
+## Server Voice Settings
+
+Server hosts can configure voice chat:
+
+- **Enable/Disable**: Turn voice chat on or off for the server
+- **Proximity Range**: Set the range at which players can hear each other
+- **Team Separation**: Configure team-only or cross-team voice (coming soon)
+- **Moderator Muting**: Allow moderators to mute disruptive players
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Multiplayer" icon="users" href="/features/multiplayer">
+    Learn about hosting and joining servers
+  </Card>
+  <Card title="Server Browser" icon="server" href="/features/server-browser">
+    Find servers with voice chat enabled
+  </Card>
+</CardGroup>

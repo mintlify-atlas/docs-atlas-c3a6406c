@@ -1,0 +1,123 @@
+---
+title: Contributing Overview
+description: Guidelines for contributing to the KYBER project
+---
+
+## Welcome to KYBER Development
+
+KYBER is an open-source private server tool for STAR WARS Battlefront II (2017). We welcome contributions from the community and appreciate your interest in making KYBER better.
+
+## Code of Conduct
+
+This project and everyone participating in it is governed by the [KYBER Code of Conduct](https://github.com/ArmchairDevelopers/Kyberv2/blob/main/CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to contact@kyber.gg.
+
+## Getting Help
+
+Before you ask a question, please:
+
+1. Read the available [Documentation](https://docs.kyber.gg)
+2. Search for existing [Issues](https://github.com/ArmchairDevelopers/Kyberv2/issues) that might help you
+3. Search the internet for answers
+
+If you still need clarification:
+
+- Open an [Issue](https://github.com/ArmchairDevelopers/Kyberv2/issues/new)
+- Provide as much context as you can about what you're running into
+- Include project and platform versions (Node.js, npm, Flutter, etc.)
+
+## How to Contribute
+
+<Warning>
+  When contributing to this project, you must agree that you have authored 100% of the content, that you have the necessary rights to the content, and that the content you contribute may be provided under the project license.
+</Warning>
+
+### Reporting Bugs
+
+#### Before Submitting a Bug Report
+
+A good bug report shouldn't leave others needing to chase you up for more information. Please:
+
+- Make sure that you are using the latest version
+- Determine if your bug is really a bug and not an error on your side
+- Check if there is not already a bug report existing for your bug or error in the [bug tracker](https://github.com/ArmchairDevelopers/Kyberv2/issues?q=label%3Abug)
+- Search the internet (including Stack Overflow) to see if users outside of the GitHub community have discussed the issue
+- Collect information about the bug:
+  - Stack trace (Traceback)
+  - Version of the interpreter, compiler, SDK, runtime environment, package manager
+  - Your input and the output
+  - Can you reliably reproduce the issue?
+
+#### Submitting a Bug Report
+
+<Warning>
+  You must never report security related issues, vulnerabilities or bugs including sensitive information to the issue tracker, or elsewhere in public. Instead, sensitive bugs must be sent by email to security@kyber.gg.
+</Warning>
+
+When reporting bugs:
+
+1. Open an [Issue](https://github.com/ArmchairDevelopers/Kyberv2/issues/new)
+2. Explain the behavior you would expect and the actual behavior
+3. Provide as much context as possible and describe the reproduction steps
+4. Include the information you collected above
+
+## Code Standards
+
+KYBER maintains specific coding standards for different components of the project. See [STANDARDS.md](https://github.com/ArmchairDevelopers/Kyberv2/blob/main/STANDARDS.md) for detailed guidelines.
+
+### Module (C++)
+
+- Follow C++11 standards and the `.clang-format` configuration
+- Brackets must be attached to statements (`if`, `for`, etc.)
+- Use guards instead of nesting
+- Prefix `g_` for global variables
+- Prefix `m_` for owned member variables in module classes
+- All `#defines` should be capitalized snake case
+- Hooked functions should have the suffix `Hk`
+- Use EASTL types when they can replace std library functions
+- Use the game's memory arenas instead of general heap allocation
+- Use `ThreadExecutor` when interacting with game logic from non-main threads
+- Use `Mutex<>` on fields accessed from multiple threads
+
+### Launcher (Flutter/Dart)
+
+- Follow the [Effective Dart](https://dart.dev/effective-dart) style guide
+- Use `dart format` for consistent formatting
+- Prefer `const` constructors wherever possible
+- Avoid deeply nested widget trees
+- Use feature-based architecture (see Architecture page for details)
+- Place cubits in `providers/` folder with `_cubit.dart` suffix
+- Use GetIt for dependency injection via the global `sl` instance
+
+## Development Workflow
+
+1. Fork the repository
+2. Create a feature branch from `main`
+3. Make your changes following the code standards
+4. Test your changes thoroughly
+5. Commit your changes with clear, descriptive commit messages
+6. Push to your fork
+7. Open a Pull Request
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Building KYBER" icon="hammer" href="/development/building">
+    Learn how to build all KYBER components
+  </Card>
+  <Card title="Architecture" icon="sitemap" href="/development/architecture">
+    Understand the system architecture
+  </Card>
+</CardGroup>
+
+## Maintainers
+
+- **Liam** ([7reax](https://github.com/7reax)): API, CLI, Launcher, Proxy
+- **Magix** ([MagixGames](https://github.com/MagixGames)): Module
+
+## Community
+
+Join our community:
+
+- [Discord](https://discord.gg/kyber)
+- [Twitter/X](https://x.com/KyberServers)
+- [Website](https://kyber.gg)

@@ -1,80 +1,117 @@
 ---
 title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+description: "Get started with Kyber in under 5 minutes"
 ---
 
-## Get started in three steps
+## Get up and running quickly
 
-Get your documentation site running locally and make your first customization.
+This quickstart guide will help you download Kyber, install it, and join your first community server.
 
-### Step 1: Set up your local environment
-
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
+<Steps>
+  <Step title="Download the Launcher">
+    Download the latest Kyber Launcher from [kyber.gg](https://kyber.gg).
     
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
+    <Note>
+      Make sure you have Star Wars Battlefront II (2017) installed before proceeding.
+    </Note>
+  </Step>
+
+  <Step title="Install and Launch">
+    Run the installer and follow the setup wizard. The installer will:
+    - Install the launcher to `C:\Program Files\KYBER Launcher`
+    - Set up the game module in `C:\ProgramData\Kyber`
+    - Create file associations for `.kbcollection` files
     
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+    Launch Kyber after installation completes.
+  </Step>
 
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
+  <Step title="First-Time Setup">
+    On first launch, Kyber will guide you through initial setup:
     
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    1. **EA Account**: Sign in with your EA account (required to play)
+    2. **Game Detection**: Kyber will automatically locate your Battlefront II installation
+    3. **Mod Directory**: Choose where to store downloaded mods
+    4. **Optional Integrations**:
+       - Link your Nexus Mods account (for mod downloads)
+       - Link your Discord account (for community features)
+       - Link your Patreon (if you're a supporter)
+  </Step>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+  <Step title="Join a Server">
+    You're ready to play!
+    
+    1. Click **Server Browser** in the main navigation
+    2. Browse available servers or use filters to find your preferred game mode
+    3. Click on a server to see details, including:
+       - Current players and map
+       - Required mods (if any)
+       - Server rules
+    4. Click **Join Server**
+    5. If the server requires mods you don't have, Kyber will offer to download them automatically
+    6. Click **Play** to launch the game and connect
+    
+    <Info>
+      Kyber will handle mod installation, game launching, and server connection automatically.
+    </Info>
+  </Step>
+</Steps>
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
+## What's Next?
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Explore Features" icon="star" href="/features/server-browser">
+    Learn about server browser, voice chat, and mod collections
+  </Card>
+  <Card title="Install Mods" icon="puzzle-piece" href="/guides/installing-mods">
+    Customize your game with community-created content
+  </Card>
+  <Card title="Host a Server" icon="server" href="/guides/hosting-servers">
+    Run your own community server with custom mods and maps
+  </Card>
+  <Card title="Get Help" icon="circle-question" href="/community/faq">
+    Find answers to common questions
+  </Card>
 </CardGroup>
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+## Troubleshooting
+
+Having issues? Check these common problems:
+
+<AccordionGroup>
+  <Accordion title="Launcher won't start or shows white screen">
+    This was a known issue in beta versions. Make sure you're running the latest version from kyber.gg.
+    
+    If the problem persists:
+    1. Close Kyber completely
+    2. Delete `C:\Users\<YourUsername>\AppData\Roaming\kyber_launcher`
+    3. Restart the launcher
+  </Accordion>
+
+  <Accordion title="Can't connect to servers">
+    Check that:
+    - You're signed in with your EA account
+    - Star Wars Battlefront II is installed and updated
+    - Your firewall isn't blocking Kyber
+    - The server you're trying to join isn't full
+  </Accordion>
+
+  <Accordion title="Mods not loading">
+    1. Verify your mod directory path doesn't contain special or non-ASCII characters
+    2. Check that mods are compatible with your game version
+    3. Try disabling all mods and re-enabling them one at a time
+    4. Note: There's a limit of 247 mods - the launcher will warn if you exceed this
+  </Accordion>
+</AccordionGroup>
+
+For more detailed troubleshooting, see the [Troubleshooting Guide](/community/troubleshooting).
+
+## Join the Community
+
+<CardGroup cols={2}>
+  <Card title="Discord" icon="discord" href="https://discord.gg/kyber">
+    Join the Kyber Discord for support and community events
+  </Card>
+  <Card title="Twitter" icon="twitter" href="https://x.com/KyberServers">
+    Follow @KyberServers for updates and announcements
+  </Card>
+</CardGroup>

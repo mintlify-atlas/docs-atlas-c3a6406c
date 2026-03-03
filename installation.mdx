@@ -1,0 +1,403 @@
+---
+title: Installation Guide
+description: Detailed installation instructions for Kyber Launcher and development tools
+---
+
+## Installing the Kyber Launcher
+
+The Kyber Launcher is the primary way to play on Kyber servers. This guide covers both user installation and building from source.
+
+### Prerequisites
+
+<Warning>
+  You must have Star Wars Battlefront II (2017) installed on your system before installing Kyber.
+</Warning>
+
+**Required:**
+- Windows 10 or later (64-bit)
+- Star Wars Battlefront II (2017) via Steam, Origin, or EA App
+- Visual C++ 2017 Redistributable or later
+- 500MB free disk space for the launcher
+- Additional space for mods (varies)
+
+**Optional:**
+- EA Account (required to play)
+- Nexus Mods account (for mod downloads)
+- Discord account (for community features)
+
+### End User Installation
+
+<Steps>
+  <Step title="Download the Installer">
+    Get the latest `KyberLauncherInstaller.exe` from [kyber.gg](https://kyber.gg).
+    
+    The installer is built using [Inno Setup](https://jrsoftware.org/isinfo.php) and includes:
+    - The launcher application
+    - Required dependencies (7z, UnRAR libraries)
+    - Visual C++ Redistributable (if needed)
+  </Step>
+
+  <Step title="Run the Installer">
+    Execute `KyberLauncherInstaller.exe` and follow the setup wizard:
+    
+    1. Accept the license agreement
+    2. Choose installation directory (default: `C:\Program Files\KYBER Launcher`)
+    3. Select additional tasks:
+       - Create desktop icon (optional)
+    4. Click **Install**
+    
+    The installer will automatically:
+    - Create `C:\ProgramData\Kyber` with proper permissions
+    - Create `C:\ProgramData\Kyber\Module` for game modules
+    - Register `.kbcollection` file associations
+    - Add Kyber to your Start Menu
+  </Step>
+
+  <Step title="First Launch">
+    After installation completes, you can choose to launch Kyber immediately.
+    
+    On first run:
+    1. The launcher will detect your Battlefront II installation
+    2. You'll be prompted to link your EA account
+    3. The latest game module will be downloaded to `C:\ProgramData\Kyber\Module\Kyber.dll`
+    
+    <Info>
+      The module path was moved to `C:\ProgramData` in beta9 to prevent issues with non-ASCII characters in user profile paths.
+    </Info>
+  </Step>
+</Steps>
+
+### File Locations
+
+After installation, Kyber uses the following directories:
+
+| Path | Purpose |
+|------|---------||
+| `C:\Program Files\KYBER Launcher` | Application binaries |
+| `C:\ProgramData\Kyber\Module` | Game module (Kyber.dll) |
+| `%APPDATA%\Kyber` | User settings and cache |
+| `%LOCALAPPDATA%\Temp` | Mod browser cache |
+
+<Note>
+  The `C:\ProgramData\Kyber` directory requires write permissions for all users to allow module updates.
+</Note>
+
+---
+
+## Building from Source
+
+Developers can build Kyber components from source. Each component has specific requirements.
+
+### Global Prerequisites
+
+<Steps>
+  <Step title="Clone the Repository">
+    Clone with submodules to get all dependencies:
+    
+    ```bash
+    git clone --recurse-submodules https://github.com/ArmchairDevelopers/Kyber.git
+    cd Kyber
+    ```
+    
+    If you already cloned without submodules:
+    
+    ```bash
+    git submodule update --init --recursive
+    ```
+  </Step>
+
+  <Step title="Install Protobuf Compiler">
+    Download and install [Protoc](https://github.com/protocolbuffers/protobuf/releases) and ensure `protoc` is in your `PATH`.
+    
+    Verify installation:
+    
+    ```bash
+    protoc --version
+    ```
+  </Step>
+</Steps>
+
+### Building the Launcher
+
+The launcher is built with Flutter and includes Rust components for native performance.
+
+<Steps>
+  <Step title="Install Dependencies">
+    Required tools:
+    - [Flutter](https://flutter.dev) (master channel)
+    - [Rust](https://rustup.rs) (nightly toolchain)
+    - [Melos](https://melos.invertase.dev) package manager
+    
+    Install Melos globally:
+    ```bash
+    dart pub global activate melos
+    ```
+  </Step>
+
+  <Step title="Bootstrap the Workspace">
+    From the repository root:
+    
+    ```bash
+    melos bootstrap
+    ```
+    
+    This command:
+    - Installs all Dart dependencies
+    - Generates protocol buffer bindings
+    - Runs code generation for all packages
+  </Step>
+
+  <Step title="Generate FFI Bindings">
+    Navigate to the Launcher directory and generate FFI bindings:
+    
+    ```bash
+    cd Launcher
+    dart run tool/ffigen.dart
+    ```
+  </Step>
+
+  <Step title="Run in Debug Mode">
+    Test the launcher in development:
+    
+    ```bash
+    flutter run
+    ```
+    
+    <Tip>
+      Use `flutter run -d windows` to explicitly target Windows if you have multiple platforms configured.
+    </Tip>
+  </Step>
+
+  <Step title="Build Release Binary">
+    Create an optimized release build:
+    
+    ```bash
+    flutter build windows
+    ```
+    
+    The output will be in `build/windows/x64/runner/Release/`.
+  </Step>
+
+  <Step title="Build the Installer (Optional)">
+    To create the installer:
+    
+    1. Install [Inno Setup](https://jrsoftware.org/isinfo.php)
+    2. Navigate to `Launcher/installer/`
+    3. Open `installer.iss` in Inno Setup
+    4. Click **Build** > **Compile**
+    
+    The installer will be generated as `KyberLauncherInstaller.exe`.
+  </Step>
+</Steps>
+
+### Building the Module
+
+The game module is a C++ DLL injected into Battlefront II.
+
+<Warning>
+  The Module can only be compiled on Windows with MSVC. Building without `--config=release` will cause crashes.
+</Warning>
+
+<Steps>
+  <Step title="Install Build Tools">
+    Required:
+    - Visual Studio 2019+ with MSVC
+    - [MSYS2](https://www.msys2.org/) installed to `C:\msys64`
+    - [Bazelisk](https://github.com/bazelbuild/bazelisk/releases) renamed as `bazel.exe` in PATH
+  </Step>
+
+  <Step title="Create Build Directory">
+    Due to Windows path length limitations:
+    
+    ```bash
+    mkdir C:\bz
+    ```
+    
+    This folder stores Bazel's intermediate build files.
+  </Step>
+
+  <Step title="Build the Module">
+    From the repository root:
+    
+    ```bash
+    bazel --output_user_root="C:\bz" build --config=release Kyber
+    ```
+    
+    Or use the provided batch file:
+    
+    ```bash
+    .\build.bat
+    ```
+    
+    <Note>
+      The first build will take a while as Bazel downloads and compiles all dependencies.
+    </Note>
+  </Step>
+
+  <Step title="Install the Module">
+    Copy the built DLL to the Kyber module directory:
+    
+    ```bash
+    copy Module\bazel-bin\Kyber.dll C:\ProgramData\Kyber\Module\Kyber.dll
+    ```
+    
+    The launcher will use this module when launching the game.
+  </Step>
+</Steps>
+
+#### Module Development Setup
+
+For code completion in VS Code:
+
+1. Install the clangd extension
+2. Navigate to the Module directory:
+   ```bash
+   cd Module
+   ```
+3. Generate `compile_commands.json`:
+   ```bash
+   clangd\refresh.bat
+   ```
+
+### Building the API
+
+The API service is written in Go.
+
+<Steps>
+  <Step title="Install Go">
+    Requires Go 1.24 or later from [go.dev](https://go.dev).
+  </Step>
+
+  <Step title="Install Protoc Plugins">
+    ```bash
+    go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+    ```
+  </Step>
+
+  <Step title="Generate Protobuf Files">
+    **Linux/macOS:**
+    ```bash
+    cd API
+    ./scripts/gen-proto.sh
+    ```
+    
+    **Windows:**
+    ```bash
+    cd API
+    scripts\gen-proto.bat
+    ```
+  </Step>
+
+  <Step title="Build the API">
+    **Linux/macOS:**
+    ```bash
+    go build -o kyber-api ./cmd/server
+    ```
+    
+    **Windows:**
+    ```bash
+    go build -o kyber-api.exe ./cmd/server
+    ```
+  </Step>
+</Steps>
+
+### Building the Proxy
+
+The proxy is written in Rust for maximum performance.
+
+<Steps>
+  <Step title="Install Rust">
+    Requires Rust nightly toolchain from [rustup.rs](https://rustup.rs).
+    
+    ```bash
+    rustup toolchain install nightly
+    rustup default nightly
+    ```
+  </Step>
+
+  <Step title="Build the Proxy">
+    ```bash
+    cd Proxy
+    cargo build --release
+    ```
+    
+    Output: `target/release/kyber_proxy` (or `kyber_proxy.exe` on Windows)
+  </Step>
+</Steps>
+
+### Building the CLI
+
+The CLI provides command-line tools for server management.
+
+<Steps>
+  <Step title="Install Dependencies">
+    Same as the Launcher:
+    - Flutter (master channel)
+    - Rust (nightly)
+    - Melos (installed globally)
+  </Step>
+
+  <Step title="Build the CLI">
+    ```bash
+    cd CLI
+    flutter pub get
+    flutter_rust_bridge_codegen generate
+    dart compile exe bin/kyber_cli.dart
+    ```
+    
+    Output: `build/cli/<platform>/bundle/bin/kyber_cli`
+  </Step>
+
+  <Step title="Prepare Runtime Files">
+    The CLI requires additional files to run:
+    
+    1. Copy the Rust library from `build/cli/<platform>/bundle/lib/` next to the binary
+    2. Build Maxima first (part of the build process)
+    3. Copy platform-specific files next to the binary:
+    
+    **Windows:**
+    - `maxima-service.exe`
+    - `maxima-bootstrap.exe`
+    
+    **Linux:**
+    - `maxima-bootstrap`
+  </Step>
+</Steps>
+
+---
+
+## Uninstalling Kyber
+
+To completely remove Kyber from your system:
+
+1. Run the uninstaller from **Add or Remove Programs** in Windows Settings
+2. Manually delete these directories if they remain:
+   - `C:\ProgramData\Kyber`
+   - `%APPDATA%\Kyber`
+   - `%LOCALAPPDATA%\Kyber`
+3. (Optional) Remove downloaded mods from your custom mod directory
+
+<Info>
+  Uninstalling Kyber does not affect your Star Wars Battlefront II installation or save data.
+</Info>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Learn how to use the launcher and join servers
+  </Card>
+  
+  <Card title="Contributing" icon="code-pull-request" href="/development/overview">
+    Start contributing to the Kyber project
+  </Card>
+  
+  <Card title="API Reference" icon="book" href="/api/authentication">
+    Explore the API documentation for developers
+  </Card>
+  
+  <Card title="Troubleshooting" icon="wrench" href="/community/troubleshooting">
+    Common issues and solutions
+  </Card>
+</CardGroup>

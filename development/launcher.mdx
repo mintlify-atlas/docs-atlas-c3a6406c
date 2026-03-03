@@ -1,0 +1,337 @@
+---
+title: Launcher
+description: Cross-platform Flutter application for managing KYBER game sessions
+icon: rocket-launch
+---
+
+The KYBER Launcher is a modern, cross-platform desktop application built with Flutter that provides a user-friendly interface for managing Star Wars Battlefront II game sessions, mods, and servers.
+
+## Overview
+
+The Launcher serves as the primary interface for players to:
+- Browse and join multiplayer servers
+- Manage game modifications
+- Download and configure game files
+- Track player statistics and events
+- Connect with the KYBER community
+
+## Tech Stack
+
+<CardGroup cols={2}>
+  <Card title="Framework" icon="flutter">
+    Flutter 3.11+ (master channel)
+  </Card>
+  <Card title="Language" icon="code">
+    Dart SDK 3.11+
+  </Card>
+  <Card title="UI Library" icon="palette">
+    Fluent UI (Windows-style design)
+  </Card>
+  <Card title="FFI Bridge" icon="link">
+    Rust via flutter_rust_bridge
+  </Card>
+</CardGroup>
+
+### Key Dependencies
+
+- **State Management**: BLoC pattern with flutter_bloc
+- **Networking**: gRPC, GraphQL, WebSockets
+- **Storage**: Hive (local database)
+- **UI Components**: Fluent UI, custom Star Wars themed widgets
+- **Media**: Video playback, audio, cached images
+- **Error Tracking**: Sentry for crash reporting
+
+## Architecture
+
+The Launcher follows clean architecture principles with clear separation of concerns:
+
+```
+lib/
+├── core/              # Core utilities and configuration
+├── features/          # Feature modules
+│   ├── server_browser/   # Server browsing and filtering
+│   ├── mod_browser/      # Mod discovery and installation
+│   ├── maxima/           # EA backend integration
+│   ├── kyber/            # KYBER API integration
+│   └── stats/            # Player statistics
+├── shared/            # Shared UI components
+└── gen/               # Generated code (assets, rust bindings)
+```
+
+### Key Features Implementation
+
+<CodeGroup>
+
+```dart lib/main.dart
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:fluent_ui/fluent_ui.dart';
+import 'package:kyber_launcher/core/routing/app_router.dart';
+import 'package:kyber_launcher/features/server_browser/providers/server_list_cubit.dart';
+import 'package:kyber_launcher/features/maxima/providers/maxima_cubit.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Rust FFI bindings
+  await RustLib.init();
+  
+  // Initialize Hive storage
+  await Hive.initFlutter();
+  
+  runApp(const KyberApp());
+}
+
+class KyberApp extends StatelessWidget {
+  const KyberApp({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => ServerListCubit()),
+        BlocProvider(create: (_) => MaximaCubit()),
+        // Additional providers...
+      ],
+      child: FluentApp.router(
+        routerConfig: appRouter,
+        theme: FluentThemeData(
+          // Custom Star Wars theme
+        ),
+      ),
+    );
+  }
+}
+```
+
+```dart features/server_browser/server_list_cubit.dart
+class ServerListCubit extends Cubit<ServerListState> {
+  ServerListCubit() : super(ServerListInitial());
+  
+  final _grpcClient = GrpcClient();
+  StreamSubscription? _serverSubscription;
+  
+  Future<void> loadServers() async {
+    emit(ServerListLoading());
+    
+    try {
+      _serverSubscription = _grpcClient
+        .getServerStream()
+        .listen((servers) {
+          emit(ServerListLoaded(servers));
+        });
+    } catch (e) {
+      emit(ServerListError(e.toString()));
+    }
+  }
+}
+```
+
+</CodeGroup>
+
+## Building
+
+### Prerequisites
+
+<Steps>
+  <Step title="Install Flutter">
+    Download and install Flutter (master channel)
+    ```bash
+    flutter channel master
+    flutter upgrade
+    ```
+  </Step>
+  
+  <Step title="Install Rust">
+    Install Rust nightly toolchain
+    ```bash
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    rustup toolchain install nightly
+    ```
+  </Step>
+  
+  <Step title="Install Protoc">
+    Download [Protocol Buffers compiler](https://github.com/protocolbuffers/protobuf/releases) and add to PATH
+  </Step>
+  
+  <Step title="Bootstrap Workspace">
+    Install Melos and bootstrap dependencies
+    ```bash
+    dart pub global activate melos
+    cd ~/workspace/source
+    melos bootstrap
+    ```
+  </Step>
+</Steps>
+
+### Generate FFI Bindings
+
+<Tabs>
+  <Tab title="Windows">
+    ```bash
+    cd Launcher
+    dart run tool/ffigen.dart
+    ```
+  </Tab>
+  
+  <Tab title="Linux">
+    ```bash
+    cd Launcher
+    dart run tool/ffigen.dart
+    ```
+  </Tab>
+</Tabs>
+
+### Development Build
+
+Run the launcher in debug mode:
+
+```bash
+cd Launcher
+flutter run
+```
+
+<Tip>
+  Use `flutter run -d windows` or `flutter run -d linux` to specify the platform
+</Tip>
+
+### Release Build
+
+<Tabs>
+  <Tab title="Windows">
+    ```bash
+    cd Launcher
+    flutter build windows --release
+    ```
+    
+    Output: `build/windows/runner/Release/`
+  </Tab>
+  
+  <Tab title="Linux">
+    ```bash
+    cd Launcher
+    flutter build linux --release
+    ```
+    
+    Output: `build/linux/x64/release/bundle/`
+  </Tab>
+</Tabs>
+
+### Building the Installer
+
+<Tabs>
+  <Tab title="Windows">
+    Use [Inno Setup](https://jrsoftware.org/isinfo.php) with the provided script:
+    
+    ```bash
+    # After building the release binary
+    cd Launcher/installer
+    iscc installer.iss
+    ```
+    
+    The installer will be created in the `installer/Output` directory.
+  </Tab>
+  
+  <Tab title="Linux">
+    Package the bundle directory:
+    
+    ```bash
+    cd build/linux/x64/release
+    tar -czf kyber-launcher-linux.tar.gz bundle/
+    ```
+  </Tab>
+</Tabs>
+
+## Platform-Specific Features
+
+### Windows
+
+- Native window management (minimize to tray, always on top)
+- Discord Rich Presence integration
+- Windows Registry integration for game detection
+- Custom title bar with Fluent Design
+
+### Linux
+
+- XDG desktop integration
+- Native file picker
+- System tray support
+
+## Project Structure
+
+```yaml pubspec.yaml
+name: kyber_launcher
+version: 2.0.0-beta9+1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  fluent_ui: ^3.0.0
+  flutter_bloc: ^9.0.0
+  grpc: ^5.0.0
+  graphql_flutter: ^5.2.0
+  hive_ce: latest
+  sentry_flutter: ^9.5.0
+  window_manager: ^0.5.1
+  flutter_rust_bridge: latest
+  # Additional dependencies...
+```
+
+## Code Generation
+
+The Launcher uses several code generation tools:
+
+<CodeGroup>
+
+```bash Generate All
+cd Launcher
+flutter pub run build_runner build --delete-conflicting-outputs
+```
+
+```bash Generate Assets
+flutter pub run flutter_gen_runner
+```
+
+```bash Generate Rust Bindings
+dart run tool/ffigen.dart
+```
+
+</CodeGroup>
+
+## Development Tips
+
+<AccordionGroup>
+  <Accordion title="Hot Reload">
+    Flutter's hot reload works great for UI changes, but requires a restart for:
+    - Changes to Rust code
+    - Changes to generated code
+    - Changes to native plugins
+  </Accordion>
+  
+  <Accordion title="Debugging gRPC">
+    Enable gRPC logging:
+    ```dart
+    GrpcOrGrpcWebClientChannel.enableLog = true;
+    ```
+  </Accordion>
+  
+  <Accordion title="Theme Customization">
+    All theme colors and styles are defined in `lib/core/config/colors.dart`. The launcher uses a custom Star Wars inspired theme based on Fluent Design.
+  </Accordion>
+</AccordionGroup>
+
+## Common Issues
+
+<Warning>
+  If you encounter FFI binding errors, ensure you've run `dart run tool/ffigen.dart` after any Rust code changes.
+</Warning>
+
+<Note>
+  The Launcher requires the Module DLL to be present at `C:/ProgramData/Kyber/Module/Kyber.dll` for game launching functionality.
+</Note>
+
+## Related Components
+
+- [Module](/development/module) - C++ game module that the Launcher injects
+- [API](/development/api) - Backend API for server data
+- [CLI](/development/cli) - Command-line alternative to the Launcher

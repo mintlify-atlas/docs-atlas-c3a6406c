@@ -1,0 +1,378 @@
+---
+title: Server Management API
+description: gRPC API for server moderation, player management, and administrative actions
+---
+
+The Server Management API provides tools for server moderators and administrators to manage players, execute commands, and handle punishments.
+
+## Service Definition
+
+The ServerManagement service is defined in `kyber_api.proto`:
+
+```protobuf
+service ServerManagement {
+  rpc UnbanPlayer(UnbanPlayerRequest) returns (kyber_common.Empty);
+  rpc GetPunishments(PunishmentsRequest) returns (PunishmentsResponse);
+  rpc ModeratedServers(kyber_common.Empty) returns (ServerList);
+  rpc KickPlayer(ServerKickPlayerRequest) returns (kyber_common.Empty);
+  rpc BanPlayer(ServerBanPlayerRequest) returns (kyber_common.Empty);
+  rpc SetMapRotation(ServerSetMapRotationRequest) returns (kyber_common.Empty);
+  rpc RunCommand(ServerRunCommandRequest) returns (kyber_common.Empty);
+  rpc AddModerator(AddModeratorRequest) returns (kyber_common.Empty);
+  rpc RemoveModerator(RemoveModeratorRequest) returns (kyber_common.Empty);
+  rpc GetModerators(ModeratorsRequest) returns (ModeratorList);
+}
+```
+
+## Player Management
+
+### Kick Player
+
+Removes a player from the server and creates a kick punishment record.
+
+**Endpoint:** `ServerManagement.KickPlayer`
+
+**Request:**
+
+<ParamField path="id" type="string" required>
+  Server ID
+</ParamField>
+
+<ParamField path="userId" type="string" required>
+  User ID of the player to kick
+</ParamField>
+
+<ParamField path="reason" type="string" required>
+  Reason for the kick
+</ParamField>
+
+**Response:** Empty (success)
+
+**Authentication:** Required (must be server moderator, host, or have special entitlements)
+
+**Implementation:** `API/internal/rpc/server_management.go:217`
+
+**Validation:**
+- User must be a moderator of the server
+- Cannot kick the server host
+- Creates a punishment record of type `KICK`
+
+---
+
+### Ban Player
+
+Bans a player from the server, optionally for a specified duration.
+
+**Endpoint:** `ServerManagement.BanPlayer`
+
+**Request:**
+
+<ParamField path="id" type="string" required>
+  Server ID
+</ParamField>
+
+<ParamField path="userId" type="string" required>
+  User ID of the player to ban
+</ParamField>
+
+<ParamField path="reason" type="string" required>
+  Reason for the ban
+</ParamField>
+
+<ParamField path="duration" type="uint64" optional>
+  Ban duration in seconds. Omit or set to 0 for permanent ban
+</ParamField>
+
+**Response:** Empty (success)
+
+**Authentication:** Required (must be server moderator or host)
+
+**Implementation:** `API/internal/rpc/server_management.go:258`
+
+**Validation:**
+- User must be a moderator of the server
+- Cannot ban the server host
+- Creates a punishment record of type `BAN`
+- Player is kicked immediately
+
+---
+
+### Unban Player
+
+Removes an active ban for a player on a specific server.
+
+**Endpoint:** `ServerManagement.UnbanPlayer`
+
+**Request:**
+
+<ParamField path="serverId" type="string" required>
+  Server ID
+</ParamField>
+
+<ParamField path="userId" type="string" required>
+  User ID of the player to unban
+</ParamField>
+
+**Response:** Empty (success)
+
+**Authentication:** Required (must be server moderator or host)
+
+**Implementation:** `API/internal/rpc/server_management.go:35`
+
+**Validation:**
+- User must be a moderator of the server
+- Punishment must exist and be active
+- Records the moderator who overturned the ban
+
+---
+
+## Punishment Management
+
+### Get Punishments
+
+Retrieves all punishment records for a specific server.
+
+**Endpoint:** `ServerManagement.GetPunishments`
+
+**Request:**
+
+<ParamField path="serverId" type="string" required>
+  Server ID
+</ParamField>
+
+**Response:**
+
+<ResponseField name="punishments" type="Punishment[]">
+  Array of punishment records
+</ResponseField>
+
+**Authentication:** Required (must be server moderator or host)
+
+**Implementation:** `API/internal/rpc/server_management.go:61`
+
+**Punishment Object:**
+
+<ResponseField name="id" type="string">
+  Unique punishment ID
+</ResponseField>
+
+<ResponseField name="type" type="PunishmentType">
+  Type of punishment: `KICK` (0) or `BAN` (1)
+</ResponseField>
+
+<ResponseField name="issuer" type="string" optional>
+  User ID of the moderator who issued the punishment
+</ResponseField>
+
+<ResponseField name="user" type="KyberPlayer">
+  Player who received the punishment
+</ResponseField>
+
+<ResponseField name="reason" type="string">
+  Reason for the punishment
+</ResponseField>
+
+<ResponseField name="issued_at" type="uint64">
+  Unix timestamp when punishment was issued
+</ResponseField>
+
+<ResponseField name="expires_at" type="uint64" optional>
+  Unix timestamp when punishment expires (null for permanent)
+</ResponseField>
+
+<ResponseField name="moderator" type="KyberPlayer" optional>
+  Full moderator information
+</ResponseField>
+
+---
+
+## Server Control
+
+### Run Command
+
+Executes a console command on the server.
+
+**Endpoint:** `ServerManagement.RunCommand`
+
+**Request:**
+
+<ParamField path="id" type="string" required>
+  Server ID
+</ParamField>
+
+<ParamField path="command" type="string" required>
+  Console command to execute
+</ParamField>
+
+**Response:** Empty (success)
+
+**Authentication:** Required (must be server moderator or host)
+
+**Implementation:** `API/internal/rpc/server_management.go:201`
+
+**Note:** Command execution is logged and sent to the server console.
+
+---
+
+## Moderator Management
+
+### Get Moderators
+
+Retrieves the list of moderators for a specific server.
+
+**Endpoint:** `ServerManagement.GetModerators`
+
+**Request:**
+
+<ParamField path="serverId" type="string" required>
+  Server ID
+</ParamField>
+
+**Response:**
+
+<ResponseField name="users" type="KyberPlayer[]">
+  Array of moderator user objects
+</ResponseField>
+
+**Authentication:** Required (must be server moderator or host)
+
+**Implementation:** `API/internal/rpc/server_management.go:110`
+
+---
+
+### Add Moderator
+
+Adds a user as a moderator for the current user's servers.
+
+**Endpoint:** `ServerManagement.AddModerator`
+
+**Request:**
+
+<ParamField path="id" type="string" required>
+  User ID to add as moderator
+</ParamField>
+
+**Response:** Empty (success)
+
+**Authentication:** Required (must be server host)
+
+**Implementation:** `API/internal/rpc/server_management.go:154`
+
+**Validation:**
+- User must not already be a moderator
+- Target user must exist
+
+---
+
+### Remove Moderator
+
+Removes a user from the moderator list.
+
+**Endpoint:** `ServerManagement.RemoveModerator`
+
+**Request:**
+
+<ParamField path="id" type="string" required>
+  User ID to remove as moderator
+</ParamField>
+
+**Response:** Empty (success)
+
+**Authentication:** Required (must be server host)
+
+**Implementation:** `API/internal/rpc/server_management.go:182`
+
+**Validation:**
+- User must be in the moderator list
+
+---
+
+### Moderated Servers
+
+Retrieves all servers that the current user has moderation privileges for.
+
+**Endpoint:** `ServerManagement.ModeratedServers`
+
+**Request:** Empty
+
+**Response:**
+
+<ResponseField name="servers" type="Server[]">
+  Array of server objects
+</ResponseField>
+
+<ResponseField name="page" type="uint32">
+  Current page number (always 1 for this endpoint)
+</ResponseField>
+
+<ResponseField name="pages" type="uint32">
+  Total pages (always 1 for this endpoint)
+</ResponseField>
+
+**Authentication:** Required
+
+**Implementation:** `API/internal/rpc/server_management.go:305`
+
+**Behavior:**
+- Users with `EntitlementGlobalServerModerator` see all servers
+- Users with `EntitlementOfficialServerModerator` see all official servers
+- Regular users see only servers they host or moderate
+
+---
+
+## Data Models
+
+### PunishmentType Enum
+
+```protobuf
+enum PunishmentType {
+  KICK = 0;
+  BAN = 1;
+}
+```
+
+### KyberPlayer
+
+```protobuf
+message KyberPlayer {
+  string id = 1;
+  string name = 2;
+}
+```
+
+### Server Object
+
+See the Server Browser API documentation for the complete Server object definition.
+
+## Authorization
+
+Moderators are determined by:
+
+1. **Server Host** - Creator of the server (stored in `server.HostID`)
+2. **Assigned Moderators** - Users in the host's `ModeratorUserIDs` list
+3. **Global Moderators** - Users with `EntitlementGlobalServerModerator`
+4. **Official Server Moderators** - Users with `EntitlementOfficialServerModerator` (for official servers only)
+
+All methods use the `isModerator` helper function (`API/internal/rpc/server_management.go:352`) to validate permissions.
+
+## Error Codes
+
+- `NOT_FOUND` (5) - Server, user, or punishment not found
+- `PERMISSION_DENIED` (7) - User is not a moderator of the server
+- `INTERNAL` (13) - Database or server communication error
+- `ALREADY_EXISTS` (6) - User is already a moderator
+
+## WebSocket Events
+
+Some server management actions trigger WebSocket events:
+
+- **KickPlayer** - Sends kick event to server via WebSocket
+- **BanPlayer** - Sends kick event to server (ban is enforced on rejoin)
+- **RunCommand** - Publishes command to server console and WebSocket subscribers
+
+## Implementation Notes
+
+- Punishment records are stored permanently in the database
+- Bans can be temporary (with expiration) or permanent (null expiration)
+- Commands are logged with moderator information
+- The server host cannot be kicked or banned from their own server

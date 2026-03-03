@@ -1,0 +1,422 @@
+---
+title: "Mod Support"
+description: "Install, manage, and play with community mods using Kyber's integrated mod loader and Nexus Mods integration"
+icon: "puzzle-piece"
+---
+
+Kyber includes a powerful mod loading system that allows you to customize Star Wars Battlefront II with community-created content, from simple cosmetic changes to complete gameplay overhauls.
+
+## Overview
+
+The Kyber Mod Loader is built directly into the game client, providing seamless mod support without manual file management or game modifications.
+
+<Info>
+Kyber supports Frosty mods, the standard modding format for Frostbite engine games including Battlefront II.
+</Info>
+
+## Mod Types
+
+### Gameplay Mods
+
+Mods that change game mechanics and must match between all players:
+
+- **Balance Changes**: Weapon stats, hero abilities, game mechanics
+- **New Content**: Custom heroes, weapons, vehicles, reinforcements
+- **Custom Maps**: Community-created maps and locations
+- **Game Modes**: New or modified game modes
+
+<Warning>
+All players on a server must have the exact same gameplay mods installed. Version mismatches will prevent joining.
+</Warning>
+
+### Cosmetic Mods
+
+Visual-only modifications that don't affect gameplay:
+
+- **Skins**: Character appearances, trooper legions, hero variants
+- **Visual Effects**: Blaster effects, lightsaber colors, UI changes
+- **Sound Replacements**: Voice lines, music, sound effects
+- **Model Replacements**: Visual model changes without gameplay impact
+
+<Check>
+Cosmetic mods can be mixed and matched freely. You can use different skins than other players on the same server.
+</Check>
+
+## Installing Mods
+
+### From Nexus Mods
+
+Kyber integrates directly with Nexus Mods for one-click installations:
+
+<Steps>
+  <Step title="Browse Mods">
+    Navigate to the "Mods" page in Kyber Launcher, then click the "Browser" tab
+  </Step>
+  <Step title="Find a Mod">
+    Use the search bar and category filters to find mods on Nexus Mods
+  </Step>
+  <Step title="Download">
+    Click "Download" on any mod page - Kyber handles the rest automatically
+  </Step>
+  <Step title="Enable">
+    Downloaded mods appear in your "Mods" tab. Toggle them on to activate
+  </Step>
+</Steps>
+
+### Manual Installation
+
+For mods from other sources:
+
+1. **Download the Mod**: Get the `.fbmod` or `.zip` file containing mods
+2. **Open Mod Folder**: Click the folder icon in the Mods page header
+3. **Copy Files**: Place `.fbmod` files in the mods directory
+4. **Refresh**: Kyber automatically detects new mods
+
+<Tip>
+The default mod directory is located at: `%USERPROFILE%/Documents/Kyber/Mods`
+
+You can change this location in Settings > Mods.
+</Tip>
+
+### From Server Browser
+
+When joining modded servers:
+
+- **Auto-Detect Missing**: Kyber shows which mods you need
+- **One-Click Install**: Download buttons appear for missing mods
+- **Queue Downloads**: Multiple mods download in parallel
+- **Auto-Enable**: Downloaded mods are automatically enabled for the server
+
+## Managing Mods
+
+### Mods Page Interface
+
+The Mods page provides comprehensive mod management:
+
+#### Mod List View
+
+- **Search**: Filter mods by name or description
+- **Mod Scope Filter**: Show all mods, enabled only, or disabled only
+- **Multi-Select**: Shift-click to select multiple mods
+- **Bulk Actions**: Enable/disable or delete multiple mods at once
+
+#### Mod Information Panel
+
+Click any mod to view detailed information:
+
+- **Mod Name & Version**: Full mod identification
+- **Author**: Mod creator information
+- **Description**: What the mod changes
+- **File Size**: Disk space used
+- **Installation Date**: When you downloaded the mod
+- **Mod Type**: Gameplay or cosmetic classification
+- **Dependencies**: Required mods or DLC
+
+### Enable/Disable Mods
+
+Toggle mods on or off:
+
+- **Checkbox**: Click the checkbox next to any mod to enable/disable
+- **Instant Apply**: Changes apply immediately (no restart needed)
+- **Profile Persistence**: Enabled mods are remembered
+
+<Info>
+Disabling a mod doesn't delete it. The files remain on disk for quick re-enabling.
+</Info>
+
+### Deleting Mods
+
+1. Select one or more mods
+2. Click the delete icon (trash can) in the header
+3. Confirm deletion in the dialog
+4. Mods are permanently removed from disk
+
+## Mod Browser
+
+### Nexus Mods Integration
+
+Kyber's built-in browser connects to Nexus Mods:
+
+<Steps>
+  <Step title="Link Account">
+    Connect your Nexus Mods account in Settings > Integrations
+  </Step>
+  <Step title="Browse Categories">
+    Explore mods by category: Heroes, Troopers, Maps, Weapons, etc.
+  </Step>
+  <Step title="Search">
+    Use the search bar to find specific mods by name or description
+  </Step>
+  <Step title="Download">
+    Click download on any mod - authentication and installation are automatic
+  </Step>
+</Steps>
+
+### Browse Features
+
+- **Category Navigation**: Browse by type of content
+- **Trending Mods**: See what the community is downloading
+- **Pagination**: Navigate through thousands of mods
+- **Mod Details**: View descriptions, images, and requirements before downloading
+- **Premium Support**: Faster downloads for Nexus Mods Premium members
+
+### Download Management
+
+Built-in download manager:
+
+- **Parallel Downloads**: Multiple mods download simultaneously
+- **Progress Tracking**: See download progress and speed
+- **Pause/Resume**: Pause downloads and resume later
+- **Auto-Extract**: Compressed archives are automatically extracted
+- **Integrity Checking**: Verify downloaded files aren't corrupted
+
+## Collections
+
+Organize mods into reusable sets:
+
+### Creating Collections
+
+<Steps>
+  <Step title="Select Mods">
+    Multi-select mods you want in the collection (Shift-click)
+  </Step>
+  <Step title="Create Collection">
+    Click the collection icon in the header
+  </Step>
+  <Step title="Name & Customize">
+    Give your collection a name and optional custom icon
+  </Step>
+  <Step title="Save">
+    The collection is saved and appears in the Collections panel
+  </Step>
+</Steps>
+
+### Using Collections
+
+- **Quick Enable**: Activate an entire mod set with one click
+- **Cosmetic Collections**: Special collections for cosmetic-only mods
+- **Server Presets**: Save mod configurations for specific servers
+- **Share Collections**: Export and share collection files with friends
+
+### Collection Management
+
+- **Edit Collections**: Add or remove mods from existing collections
+- **Custom Icons**: Set a custom image for easy identification
+- **Export/Import**: Share collections via `.kbc` files
+- **Cosmetic-Only Flag**: Mark collections as cosmetic to allow flexible usage
+
+<Tip>
+Create collections for different playstyles: "Clone Wars Era", "Immersive Realism", "Visual Overhaul", etc.
+</Tip>
+
+## How Mods Work
+
+### Mod Loading System
+
+The Kyber Module's ModLoader injects mods at runtime:
+
+1. **Game Launch**: Kyber Module is injected into the game process
+2. **Mod Enumeration**: All enabled mods are scanned and loaded
+3. **Asset Merging**: Mod assets are merged with game assets
+4. **Runtime Patching**: Game memory is patched with modded content
+5. **Hot Loading**: Some mods support live editing during gameplay
+
+### Technical Details
+
+For modders and advanced users:
+
+- **Frosty Format**: Standard `.fbmod` Frostbite mod packages
+- **Bundle Merging**: ModLoader merges mod bundles with game bundles
+- **Chunk Modification**: Individual asset chunks are replaced or modified
+- **Handler System**: Custom handlers for specific asset types (localization, meshes, etc.)
+- **Live Edit**: Supports Frosty Editor's live editing features
+
+### Mod Priorities
+
+When multiple mods modify the same content:
+
+- **Load Order**: Mods load in alphabetical order by filename
+- **Last Wins**: Later mods override earlier ones for conflicts
+- **Manual Ordering**: Use filename prefixes to control load order (e.g., `01-ModName`)
+
+## Server Mod Requirements
+
+### Joining Modded Servers
+
+When you select a modded server:
+
+<Steps>
+  <Step title="Requirement Check">
+    Kyber compares server mods with your installed mods
+  </Step>
+  <Step title="Download Missing">
+    Download buttons appear for mods you don't have
+  </Step>
+  <Step title="Version Matching">
+    Kyber ensures you have the exact versions required
+  </Step>
+  <Step title="Auto-Enable">
+    Required mods are automatically enabled when joining
+  </Step>
+  <Step title="Join">
+    Once mods are ready, the JOIN button becomes available
+  </Step>
+</Steps>
+
+### Mod Synchronization
+
+<Check>
+Kyber handles mod switching automatically:
+</Check>
+
+- **Server Switching**: Mods change when you join different servers
+- **Cosmetic Preservation**: Your cosmetic mods stay enabled across servers
+- **Validation**: Continuous verification that mods match server requirements
+
+## Mod Hosting
+
+Server hosts can distribute mods:
+
+### Nexus Mods Links
+
+Link directly to Nexus Mods:
+
+- Provide the Nexus Mods URL in server configuration
+- Players download from Nexus Mods using their own accounts
+- Supports premium and free downloads
+
+### Kyber CDN
+
+Upload mods to Kyber's hosting:
+
+- **Direct Upload**: Upload `.fbmod` files through the API
+- **Fast Downloads**: Distributed CDN for quick worldwide downloads
+- **Version Control**: Upload multiple versions, server specifies which to use
+- **File Size Limits**: Mods up to 2GB supported
+
+<Warning>
+Only upload mods you have permission to distribute. Respect mod authors' licenses and terms.
+</Warning>
+
+## Mod Development
+
+### Creating Mods
+
+Develop mods using Frosty Editor:
+
+1. **Get Frosty Editor**: Download from Frosty Mod Manager community
+2. **Open Battlefront II**: Load the game in Frosty Editor
+3. **Make Changes**: Edit assets, scripts, and game data
+4. **Export Mod**: Save as `.fbmod` package
+5. **Test in Kyber**: Load the mod in Kyber to test
+
+### Live Editing
+
+<Tip>
+Kyber supports Frosty's live editing for rapid iteration during development.
+</Tip>
+
+Enable live edit mode:
+
+- Modifications made in Frosty Editor appear in-game in real-time
+- No need to restart the game for each change
+- Perfect for tweaking values and testing
+
+### Testing Mods
+
+- **Local Testing**: Enable mods and launch the game to test solo
+- **Private Servers**: Host a private server to test multiplayer mods
+- **Beta Testing**: Share mods with trusted testers before public release
+
+## Best Practices
+
+### Mod Organization
+
+<AccordionGroup>
+  <Accordion title="Use Descriptive Names">
+    Rename mod files to clearly indicate what they do:
+    
+    `Imperial-Storm-Trooper-501st-Legion.fbmod`
+    
+    Better than:
+    
+    `mod123.fbmod`
+  </Accordion>
+
+  <Accordion title="Create Collections">
+    Group related mods into collections for easy management:
+    
+    - "Clone Wars" collection
+    - "Realistic Graphics" collection  
+    - "Quality of Life" collection
+  </Accordion>
+
+  <Accordion title="Regular Cleanup">
+    Periodically review and delete unused mods to free disk space.
+  </Accordion>
+
+  <Accordion title="Backup Collections">
+    Export your favorite collections to back them up before major changes.
+  </Accordion>
+</AccordionGroup>
+
+### Performance Considerations
+
+- **Limit Active Mods**: Too many mods can impact performance
+- **Monitor Load Times**: Many large mods increase startup time
+- **Texture Mods**: High-resolution texture mods use more VRAM
+- **Cosmetic Only**: Consider using cosmetic collections to reduce conflicts
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Mod Not Loading">
+    **Check:**
+    - Mod is enabled (checkbox is checked)
+    - Mod file isn't corrupted (try re-downloading)
+    - No conflicting mods
+    - Mod is compatible with current game version
+    
+    **Solution:** Disable other mods to isolate conflicts, verify file integrity.
+  </Accordion>
+
+  <Accordion title="Game Crashes with Mods">
+    **Common causes:**
+    - Mod conflicts
+    - Corrupted mod files
+    - Outdated mods
+    - Too many mods
+    
+    **Solution:** Disable all mods, then enable one at a time to find the problematic mod.
+  </Accordion>
+
+  <Accordion title="Can't Download from Nexus Mods">
+    **Check:**
+    - Nexus Mods account is linked in Settings
+    - API key is valid
+    - Mod still exists on Nexus Mods
+    - Internet connection is stable
+    
+    **Solution:** Re-link your Nexus Mods account, verify the mod page is accessible.
+  </Accordion>
+
+  <Accordion title="Wrong Mod Version">
+    **Issue:** Server requires different version than you have
+    
+    **Solution:** Download the correct version from the server info panel. Kyber shows required versions.
+  </Accordion>
+</AccordionGroup>
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Collections" icon="layer-group" href="/features/collections">
+    Organize mods with collections
+  </Card>
+  <Card title="Server Browser" icon="server" href="/features/server-browser">
+    Find modded servers to join
+  </Card>
+  <Card title="Multiplayer" icon="users" href="/features/multiplayer">
+    Host modded servers
+  </Card>
+</CardGroup>

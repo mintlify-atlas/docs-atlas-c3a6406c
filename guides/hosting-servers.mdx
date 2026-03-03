@@ -1,0 +1,296 @@
+---
+title: Hosting Your Own Server
+description: Complete guide to hosting dedicated and non-dedicated servers on Kyber
+---
+
+## Overview
+
+Kyber allows you to host both dedicated and non-dedicated servers for Star Wars Battlefront II. Dedicated servers run without a graphical interface and are ideal for 24/7 hosting, while non-dedicated servers allow you to play on your own server.
+
+## Prerequisites
+
+Before hosting a server, ensure you have:
+
+- A valid EA account with Star Wars Battlefront II
+- Kyber authentication token
+- At least 40 GB of free disk space
+- Stable internet connection
+- Docker installed (for dedicated servers)
+
+<Warning>
+Dedicated servers should be hosted using the official Docker image. Running dedicated servers outside Docker requires setting the environment variable `KYBER_BYPASS_DOCKER_I_REALLY_KNOW_WHAT_I_AM_DOING`.
+</Warning>
+
+## Using the Launcher
+
+### Quick Start
+
+<Steps>
+  <Step title="Open Server Browser">
+    Navigate to the Server Browser in the Kyber Launcher.
+  </Step>
+  
+  <Step title="Configure Server Settings">
+    Click "Host Server" and configure:
+    - **Server Name**: 3-40 characters (required)
+    - **Description**: Optional, max 256 characters
+    - **Password**: Optional, max 64 characters
+    - **Max Players**: 1-64 players (default: 40)
+  </Step>
+  
+  <Step title="Select Mod Collection">
+    Choose a mod collection from your library. Only gameplay and map mods will be loaded on the server.
+  </Step>
+  
+  <Step title="Configure Map Rotation">
+    Set up your map rotation using the map rotation builder. See [Map Rotations](/guides/map-rotations) for details.
+  </Step>
+  
+  <Step title="Start Server">
+    Click "Start Server" to launch. The launcher will inject the Kyber module and register your server.
+  </Step>
+</Steps>
+
+## Using the CLI
+
+For advanced users and dedicated hosting, use the CLI:
+
+### Basic Command
+
+```bash
+kyber_cli start_server \
+  --server-name "My Awesome Server" \
+  --max-players 40 \
+  --credentials "username:password"
+```
+
+### Environment Variables
+
+The CLI supports these environment variables from source/CLI/lib/commands/start_server_command.dart:116-298:
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `KYBER_SERVER_NAME` | Server name (3-40 chars) | Yes |
+| `KYBER_SERVER_PASSWORD` | Server password | No |
+| `KYBER_SERVER_DESCRIPTION` | Server description | No |
+| `KYBER_SERVER_MAX_PLAYERS` | Max players (1-64) | No |
+| `KYBER_MAP_ROTATION` | Base64 encoded rotation file | No |
+| `KYBER_MOD_FOLDER` | Path to mod folder | No |
+| `KYBER_API_TOKEN` | Kyber auth token | Yes |
+| `KYBER_INTERFACE_PORT` | Interface port (default: 9000) | No |
+| `KYBER_DEDICATED_SERVER` | Set to "1" for dedicated mode | No |
+| `KYBER_HIDE_CONSOLE` | Hide console window | No |
+
+### Command Options
+
+#### Server Options
+
+```bash
+--server-name, -n       # Server name (required)
+--server-password, -p   # Server password
+--server-description    # Server description
+--max-players          # Maximum players (default: 40)
+--mode                 # Game mode
+--map                  # Map selection
+--rotation-file        # Path to rotation file
+--startup-commands     # Path to startup commands file
+```
+
+#### Mod Options
+
+```bash
+--collection-file              # Path to .kbcollection file
+--collection-mods-directory    # Directory containing mods
+--raw-mods                     # Path to mod JSON file
+--mod-folder                   # Folder with collection and mods
+```
+
+#### Maxima Options
+
+```bash
+--credentials, -c    # EA credentials (username:password)
+--token             # Kyber auth token
+--module-path       # Custom module directory
+--module-branch     # Module branch to use
+--interface-port    # Interface port (default: 9000)
+```
+
+### Examples
+
+#### Dedicated Server with Map Rotation
+
+```bash
+kyber_cli start_server \
+  --server-name "24/7 Geonosis" \
+  --max-players 40 \
+  --rotation-file /path/to/rotation.txt \
+  --collection-file /path/to/mods.kbcollection \
+  --credentials "username:password"
+```
+
+#### Non-Dedicated Server
+
+```bash
+kyber_cli start_server \
+  --server-name "My Server" \
+  --no-dedicated \
+  --map "S5_1/Levels/MP/Geonosis_01/Geonosis_01" \
+  --mode "HeroesVersusVillains" \
+  --credentials "username:password"
+```
+
+#### Server with Startup Commands
+
+Create a `commands.txt` file:
+
+```text
+ServerMessage Welcome to my server!
+ServerMessage Check out our Discord
+SetTicketCount 200
+```
+
+Then run:
+
+```bash
+kyber_cli start_server \
+  --server-name "Custom Rules Server" \
+  --startup-commands /path/to/commands.txt \
+  --credentials "username:password"
+```
+
+## Docker Deployment
+
+<Note>
+Using Docker is the recommended method for hosting dedicated servers.
+</Note>
+
+### Docker Compose Example
+
+```yaml
+version: '3.8'
+services:
+  kyber-server:
+    image: kyber/server:latest
+    environment:
+      KYBER_SERVER_NAME: "My Dedicated Server"
+      KYBER_SERVER_DESCRIPTION: "Hosted with Docker"
+      KYBER_SERVER_MAX_PLAYERS: "40"
+      KYBER_API_TOKEN: "your_token_here"
+      KYBER_MAP_ROTATION: "base64_encoded_rotation"
+    volumes:
+      - ./mods:/mods
+      - ./data:/data
+    restart: unless-stopped
+```
+
+## Server Configuration
+
+### Map Rotation Format
+
+Map rotation files use the format `MODE;MAP_PATH` per line from source/CLI/lib/commands/start_server_command.dart:192-204:
+
+```text
+HeroesVersusVillains;S5_1/Levels/MP/Geonosis_01/Geonosis_01
+Supremacy;S5_1/Levels/MP/Geonosis_01/Geonosis_01
+GalacticAssault;S6/Levels/MP/Scarif_01/Scarif_01
+```
+
+<Tip>
+Lines starting with `#` are treated as comments and ignored.
+</Tip>
+
+### Mod Loading
+
+When using a mod collection, only mods in the **gameplay** and **maps** categories are loaded on the server. The server supports:
+
+- `.fbmod` files (Frosty mods)
+- `.fbcollection` files (Frosty collections)
+- `.kbcollection` files (Kyber collections)
+
+The server will automatically:
+1. Read all mods in the collection
+2. Filter for gameplay/map mods
+3. Expand nested collections
+4. Load custom modes and maps
+5. Register them with the server
+
+## Server Management
+
+### Port Configuration
+
+The Kyber interface runs on a configurable port (default: 9000). The CLI automatically finds an available port if not specified:
+
+```bash
+--interface-port 9000
+```
+
+### License Management
+
+Kyber handles EA licensing automatically. The server will:
+
+1. Check for existing Denuvo token
+2. Fetch license from endpoint if available
+3. Upload license after game starts
+4. Cache tokens for reuse
+
+<Note>
+License endpoints are configured via `KYBER_LICENSE_ENDPOINT` and `KYBER_LICENSE_AUTH_TOKEN` environment variables.
+</Note>
+
+### Monitoring
+
+The server provides logs during startup and operation:
+
+```bash
+--show-console  # Show the Kyber console window
+```
+
+Key log messages:
+- `Starting login flow...` - EA authentication
+- `Logged in as {username}` - Successful login
+- `Loaded map rotation with {n} entries` - Rotation loaded
+- `Game started with PID: {pid}` - Game process started
+- `Kyber started` - Module injection successful
+
+## Troubleshooting
+
+### Server Name Required Error
+
+Ensure your server name is between 3-40 characters:
+
+```bash
+--server-name "My Server"  # ✓ Valid
+--server-name "AB"         # ✗ Too short
+```
+
+### Rotation File Not Found
+
+Verify the rotation file path exists:
+
+```bash
+ls -l /path/to/rotation.txt
+```
+
+### Mod Collection Issues
+
+If using `--mod-folder`, ensure:
+- Directory contains exactly one `.kbcollection` file
+- All referenced mods exist in the directory
+
+### Authentication Failures
+
+For credential issues:
+- Verify username:password format
+- Check for `NO_SUCH_USER` errors
+- Ensure EA account owns the game
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Map Rotations" icon="map" href="/guides/map-rotations">
+    Build custom map rotations
+  </Card>
+  <Card title="Server Moderation" icon="shield" href="/guides/server-moderation">
+    Manage players and enforce rules
+  </Card>
+</CardGroup>

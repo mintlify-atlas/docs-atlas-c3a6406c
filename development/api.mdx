@@ -1,0 +1,606 @@
+---
+title: API
+description: Go-based backend service powering the KYBER platform
+icon: server
+---
+
+The KYBER API is a high-performance Go service that manages multiplayer servers, player authentication, statistics, and real-time communication for the KYBER platform.
+
+## Overview
+
+The API serves as the central backend coordinating:
+- Server registration and discovery
+- Player authentication and authorization
+- Real-time server status via WebSockets
+- Player statistics and leaderboards
+- Mod distribution and updates
+- Integration with third-party services (Discord, Patreon, EA)
+
+## Tech Stack
+
+<CardGroup cols={2}>
+  <Card title="Language" icon="golang">
+    Go 1.24+
+  </Card>
+  <Card title="RPC Framework" icon="arrows-rotate">
+    gRPC + HTTP/REST
+  </Card>
+  <Card title="Database" icon="database">
+    MongoDB
+  </Card>
+  <Card title="Cache" icon="bolt">
+    Redis
+  </Card>
+</CardGroup>
+
+### Key Dependencies
+
+```go go.mod
+module github.com/ArmchairDevelopers/Kyber/API
+
+go 1.24.4
+
+require (
+    github.com/bwmarrin/discordgo v0.29.0
+    github.com/elastic/go-elasticsearch/v9 v9.2.0
+    github.com/getsentry/sentry-go v0.40.0
+    github.com/golang-jwt/jwt/v5 v5.3.0
+    github.com/gorilla/mux v1.8.1
+    github.com/gorilla/websocket v1.5.3
+    github.com/minio/minio-go/v7 v7.0.97
+    github.com/redis/go-redis/v9 v9.17.1
+    go.mongodb.org/mongo-driver v1.17.6
+    go.uber.org/zap v1.27.1
+    google.golang.org/grpc v1.77.0
+    google.golang.org/protobuf v1.36.10
+)
+```
+
+## Architecture
+
+The API follows a clean architecture with clear service boundaries:
+
+```
+API/
+├── cmd/
+│   └── server/
+│       └── main.go          # Application entry point
+├── internal/
+│   ├── api/                 # HTTP REST handlers
+│   ├── rpc/                 # gRPC service implementations
+│   └── cache/               # Redis cache layer
+├── pkg/
+│   ├── db/                  # MongoDB database layer
+│   ├── models/              # Data models
+│   ├── jwts/                # JWT authentication
+│   ├── logger/              # Structured logging
+│   ├── mq/                  # RabbitMQ message queue
+│   └── ws/                  # WebSocket server
+├── api/v1/
+│   └── pbapi/               # Generated protobuf code
+└── scripts/
+    ├── gen-proto.sh         # Generate Go code from protos
+    └── gen-proto.bat
+```
+
+### Core Services
+
+<CodeGroup>
+
+```go cmd/server/main.go
+package main
+
+import (
+    "context"
+    "net"
+    "net/http"
+    
+    "github.com/ArmchairDevelopers/Kyber/API/internal/api"
+    "github.com/ArmchairDevelopers/Kyber/API/internal/rpc"
+    "github.com/ArmchairDevelopers/Kyber/API/pkg/db"
+    "github.com/gorilla/mux"
+    "google.golang.org/grpc"
+)
+
+func main() {
+    // Initialize Sentry for error tracking
+    sentry.Init(sentry.ClientOptions{
+        Dsn: os.Getenv("SENTRY_DSN"),
+        TracesSampleRate: 1.0,
+    })
+    
+    // Connect to MongoDB
+    store, err := db.NewStore(context.Background(), os.Getenv("MONGO_URI"))
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    // Setup gRPC server
+    grpcServer := grpc.NewServer(
+        grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+            grpc_ctxtags.UnaryServerInterceptor(),
+            grpc_zap.UnaryServerInterceptor(logger.L()),
+            grpc_sentry.UnaryServerInterceptor(),
+        )),
+    )
+    
+    rpc.RegisterServices(grpcServer, store)
+    
+    // Setup HTTP REST server
+    router := mux.NewRouter()
+    api.RegisterRoutes(router, store)
+    
+    // Start servers concurrently
+    go startGRPC(grpcServer, ":9027")
+    go startHTTP(router, ":9028")
+    
+    select {} // Block forever
+}
+```
+
+```go internal/rpc/server_service.go
+type ServerService struct {
+    pbapi.UnimplementedServerServiceServer
+    store *db.Store
+    cache *cache.Redis
+}
+
+func (s *ServerService) GetServerList(
+    ctx context.Context,
+    req *pbapi.ServerListRequest,
+) (*pbapi.ServerListResponse, error) {
+    // Check cache first
+    cached, err := s.cache.Get(ctx, "servers:" + req.Region)
+    if err == nil {
+        return cached, nil
+    }
+    
+    // Query database
+    servers, err := s.store.GetServers(ctx, db.ServerFilter{
+        Region: req.Region,
+        GameMode: req.GameMode,
+        Active: true,
+    })
+    if err != nil {
+        return nil, err
+    }
+    
+    response := &pbapi.ServerListResponse{
+        Servers: serversToProto(servers),
+    }
+    
+    // Cache for 10 seconds
+    s.cache.Set(ctx, "servers:" + req.Region, response, 10*time.Second)
+    
+    return response, nil
+}
+```
+
+```go pkg/ws/server.go
+type WebSocketServer struct {
+    upgrader websocket.Upgrader
+    hub      *Hub
+}
+
+func (s *WebSocketServer) HandleConnection(w http.ResponseWriter, r *http.Request) {
+    // Verify JWT token
+    token := r.URL.Query().Get("token")
+    claims, err := jwts.VerifyToken(token)
+    if err != nil {
+        http.Error(w, "Unauthorized", http.StatusUnauthorized)
+        return
+    }
+    
+    // Upgrade to WebSocket
+    conn, err := s.upgrader.Upgrade(w, r, nil)
+    if err != nil {
+        return
+    }
+    
+    // Register client
+    client := &Client{
+        conn:   conn,
+        userID: claims.UserID,
+        send:   make(chan []byte, 256),
+    }
+    
+    s.hub.register <- client
+    
+    // Handle messages
+    go client.readPump()
+    go client.writePump()
+}
+```
+
+</CodeGroup>
+
+## Building
+
+### Prerequisites
+
+<Steps>
+  <Step title="Install Go">
+    Install Go 1.24 or later:
+    ```bash
+    # Download from https://go.dev/dl/
+    go version  # Verify installation
+    ```
+  </Step>
+  
+  <Step title="Install Protobuf Tools">
+    Install protoc and Go plugins:
+    ```bash
+    # Install protoc compiler
+    # Download from https://github.com/protocolbuffers/protobuf/releases
+    
+    # Install Go plugins
+    go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+    ```
+  </Step>
+  
+  <Step title="Clone Repository">
+    ```bash
+    git clone --recurse-submodules https://github.com/ArmchairDevelopers/Kyber.git
+    cd Kyber/API
+    ```
+  </Step>
+</Steps>
+
+### Build Commands
+
+<Tabs>
+  <Tab title="Linux">
+    ```bash
+    cd API
+    
+    # Generate protobuf code
+    ./scripts/gen-proto.sh
+    
+    # Build binary
+    go build -o kyber-api ./cmd/server
+    
+    # Run
+    ./kyber-api
+    ```
+  </Tab>
+  
+  <Tab title="Windows">
+    ```bash
+    cd API
+    
+    # Generate protobuf code
+    scripts\gen-proto.bat
+    
+    # Build binary
+    go build -o kyber-api.exe ./cmd/server
+    
+    # Run
+    kyber-api.exe
+    ```
+  </Tab>
+</Tabs>
+
+### Docker Build
+
+```dockerfile Dockerfile
+FROM golang:1.24-alpine AS builder
+
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+RUN go build -o kyber-api ./cmd/server
+
+FROM alpine:latest
+RUN apk --no-cache add ca-certificates
+WORKDIR /root/
+COPY --from=builder /app/kyber-api .
+
+EXPOSE 9027 9028
+CMD ["./kyber-api"]
+```
+
+Build and run:
+
+```bash
+docker build -t kyber-api .
+docker run -p 9027:9027 -p 9028:9028 kyber-api
+```
+
+## Configuration
+
+The API is configured via environment variables:
+
+<Tabs>
+  <Tab title="Required">
+    ```bash .env
+    # Server Ports
+    GRPC_PORT=9027
+    HTTP_PORT=9028
+    
+    # Database
+    MONGO_URI=mongodb://localhost:27017/kyber
+    REDIS_URI=redis://localhost:6379
+    
+    # Message Queue
+    AMQP_URL=amqp://guest:guest@localhost:5672/
+    
+    # Object Storage
+    MINIO_HOST=s3.kyber.gg
+    MINIO_ACCESS_KEY=your-access-key
+    MINIO_SECRET_KEY=your-secret-key
+    
+    # Error Tracking
+    SENTRY_DSN=https://your-sentry-dsn
+    ```
+  </Tab>
+  
+  <Tab title="Optional">
+    ```bash .env
+    # JWT Configuration
+    JWT_SECRET=your-secret-key
+    JWT_ISSUER=kyber.gg
+    JWT_EXPIRY=24h
+    
+    # Discord Integration
+    DISCORD_BOT_TOKEN=your-bot-token
+    DISCORD_GUILD_ID=your-guild-id
+    
+    # Patreon Integration
+    PATREON_CLIENT_ID=your-client-id
+    PATREON_CLIENT_SECRET=your-client-secret
+    
+    # Elasticsearch
+    ELASTICSEARCH_URL=http://localhost:9200
+    ```
+  </Tab>
+</Tabs>
+
+## API Endpoints
+
+### gRPC Services
+
+<CodeGroup>
+
+```protobuf ServerService
+service ServerService {
+  // Get list of active servers
+  rpc GetServerList(ServerListRequest) returns (ServerListResponse);
+  
+  // Register a new server
+  rpc RegisterServer(RegisterServerRequest) returns (Server);
+  
+  // Update server status
+  rpc UpdateServerStatus(UpdateServerStatusRequest) returns (Server);
+  
+  // Stream server updates
+  rpc StreamServers(StreamServersRequest) returns (stream ServerUpdate);
+}
+```
+
+```protobuf PlayerService
+service PlayerService {
+  // Get player profile
+  rpc GetPlayer(GetPlayerRequest) returns (Player);
+  
+  // Update player stats
+  rpc UpdateStats(UpdateStatsRequest) returns (PlayerStats);
+  
+  // Get leaderboards
+  rpc GetLeaderboard(LeaderboardRequest) returns (LeaderboardResponse);
+}
+```
+
+```protobuf AuthService
+service AuthService {
+  // Authenticate with EA account
+  rpc AuthenticateEA(AuthEARequest) returns (AuthResponse);
+  
+  // Refresh access token
+  rpc RefreshToken(RefreshTokenRequest) returns (AuthResponse);
+  
+  // Verify JWT token
+  rpc VerifyToken(VerifyTokenRequest) returns (TokenClaims);
+}
+```
+
+</CodeGroup>
+
+### REST Endpoints
+
+<CardGroup cols={2}>
+  <Card title="GET /api/v1/servers" icon="list">
+    Get list of active servers
+  </Card>
+  <Card title="GET /api/v1/player/:id" icon="user">
+    Get player profile and stats
+  </Card>
+  <Card title="GET /api/v1/leaderboard" icon="trophy">
+    Get global leaderboard
+  </Card>
+  <Card title="POST /api/v1/auth/login" icon="right-to-bracket">
+    Authenticate user
+  </Card>
+</CardGroup>
+
+## WebSocket Events
+
+Real-time events pushed to connected clients:
+
+```json
+// Server Status Update
+{
+  "type": "server.update",
+  "data": {
+    "id": "server-123",
+    "players": 35,
+    "maxPlayers": 40,
+    "map": "Naboo",
+    "mode": "Supremacy"
+  }
+}
+
+// Player Joined
+{
+  "type": "player.joined",
+  "data": {
+    "serverId": "server-123",
+    "playerId": "player-456",
+    "username": "RebelScum99"
+  }
+}
+
+// Match Started
+{
+  "type": "match.started",
+  "data": {
+    "serverId": "server-123",
+    "map": "Hoth",
+    "mode": "Galactic Assault"
+  }
+}
+```
+
+## Database Schema
+
+### MongoDB Collections
+
+<AccordionGroup>
+  <Accordion title="servers">
+    ```go
+    type Server struct {
+        ID          primitive.ObjectID `bson:"_id,omitempty"`
+        Name        string            `bson:"name"`
+        Region      string            `bson:"region"`
+        GameMode    string            `bson:"game_mode"`
+        Map         string            `bson:"map"`
+        Players     int               `bson:"players"`
+        MaxPlayers  int               `bson:"max_players"`
+        OwnerID     string            `bson:"owner_id"`
+        Active      bool              `bson:"active"`
+        CreatedAt   time.Time         `bson:"created_at"`
+        UpdatedAt   time.Time         `bson:"updated_at"`
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="players">
+    ```go
+    type Player struct {
+        ID          primitive.ObjectID `bson:"_id,omitempty"`
+        EAAccountID string            `bson:"ea_account_id"`
+        Username    string            `bson:"username"`
+        Stats       PlayerStats       `bson:"stats"`
+        CreatedAt   time.Time         `bson:"created_at"`
+        LastSeen    time.Time         `bson:"last_seen"`
+    }
+    
+    type PlayerStats struct {
+        Kills       int64 `bson:"kills"`
+        Deaths      int64 `bson:"deaths"`
+        TimePlayed  int64 `bson:"time_played"`
+        MatchesWon  int64 `bson:"matches_won"`
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="mods">
+    ```go
+    type Mod struct {
+        ID          primitive.ObjectID `bson:"_id,omitempty"`
+        Name        string            `bson:"name"`
+        Description string            `bson:"description"`
+        Version     string            `bson:"version"`
+        Author      string            `bson:"author"`
+        DownloadURL string            `bson:"download_url"`
+        FileSize    int64             `bson:"file_size"`
+        Downloads   int64             `bson:"downloads"`
+        CreatedAt   time.Time         `bson:"created_at"`
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Development
+
+### Running Locally
+
+```bash
+# Start dependencies with Docker Compose
+docker-compose up -d mongodb redis rabbitmq
+
+# Set environment variables
+export MONGO_URI=mongodb://localhost:27017/kyber
+export REDIS_URI=redis://localhost:6379
+export AMQP_URL=amqp://guest:guest@localhost:5672/
+
+# Run API
+go run ./cmd/server
+```
+
+### Testing
+
+```bash
+# Run all tests
+go test ./...
+
+# Run with coverage
+go test -cover ./...
+
+# Run specific package
+go test ./pkg/db
+
+# Run with race detection
+go test -race ./...
+```
+
+## Performance Tuning
+
+<Tabs>
+  <Tab title="Redis Caching">
+    ```go
+    // Cache frequently accessed data
+    const (
+        ServerListCacheTTL = 10 * time.Second
+        PlayerStatsCacheTTL = 5 * time.Minute
+        LeaderboardCacheTTL = 1 * time.Minute
+    )
+    
+    // Use pipeline for batch operations
+    pipe := redis.Pipeline()
+    pipe.Set(ctx, "key1", val1, ttl)
+    pipe.Set(ctx, "key2", val2, ttl)
+    pipe.Exec(ctx)
+    ```
+  </Tab>
+  
+  <Tab title="Database Indexes">
+    ```go
+    // Create indexes for common queries
+    db.Collection("servers").Indexes().CreateMany(ctx, []mongo.IndexModel{
+        {Keys: bson.D{{"region", 1}, {"active", 1}}},
+        {Keys: bson.D{{"game_mode", 1}}},
+        {Keys: bson.D{{"owner_id", 1}}},
+    })
+    ```
+  </Tab>
+  
+  <Tab title="Connection Pooling">
+    ```go
+    // Configure MongoDB connection pool
+    clientOpts := options.Client().
+        ApplyURI(mongoURI).
+        SetMaxPoolSize(100).
+        SetMinPoolSize(10).
+        SetMaxConnIdleTime(30 * time.Second)
+    ```
+  </Tab>
+</Tabs>
+
+## Related Components
+
+- [Proxy](/development/proxy) - Routes client connections to game servers
+- [Launcher](/development/launcher) - Consumes API via gRPC
+- [CLI](/development/cli) - Alternative API client

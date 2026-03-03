@@ -1,0 +1,484 @@
+---
+title: 'Mod Collections'
+description: 'Organize and manage your mods with collections for quick switching between mod configurations'
+icon: 'layer-group'
+---
+
+Collections allow you to group related mods together for easy management and quick activation. Create presets for different playstyles, servers, or cosmetic themes.
+
+## Overview
+
+Rather than manually enabling and disabling individual mods every time you want to switch between different configurations, collections let you save mod sets and activate them with a single click.
+
+<Info>
+Collections are particularly useful for managing cosmetic mods, which can be mixed freely without affecting gameplay compatibility.
+</Info>
+
+## Creating Collections
+
+### From Selected Mods
+
+Create a collection from mods you've already selected:
+
+<Steps>
+  <Step title="Navigate to Mods Page">
+    Open the "Mods" tab in the Kyber Launcher
+  </Step>
+  <Step title="Select Mods">
+    Click mods to select them. Use Shift+Click to select multiple mods at once.
+  </Step>
+  <Step title="Create Collection">
+    Click the collection icon in the header toolbar
+  </Step>
+  <Step title="Customize">
+    Name your collection and optionally add a custom icon
+  </Step>
+  <Step title="Save">
+    Click save - your collection appears in the Collections panel
+  </Step>
+</Steps>
+
+### Empty Collection
+
+Create a blank collection and add mods later:
+
+1. Click the "Create Collection" button in the Collections panel
+2. Name your new collection
+3. Add mods by dragging them or using the collection editor
+
+### From Quick Actions
+
+Alternative methods:
+
+- **Settings Shortcut**: Click the settings icon in Mods header, select "Create Collection"
+- **Admin Create**: Admin users have access to advanced collection creation
+- **Import Collection**: Load a `.kbc` collection file from another user
+
+## Collection Types
+
+### Standard Collections
+
+General-purpose mod groupings:
+
+- Can contain any type of mod (gameplay and cosmetic)
+- Used for server-specific mod configurations
+- Enable the entire collection at once
+
+### Cosmetic Collections
+
+Special collections for visual-only mods:
+
+<Check>
+Cosmetic collections are marked with a special flag that allows more flexible usage.
+</Check>
+
+**Benefits:**
+- Mix with other cosmetic collections
+- Use alongside gameplay mods from servers
+- Quick switching without affecting server compatibility
+- Perfect for personalizing your appearance
+
+**How to create:**
+1. Create a collection as normal
+2. Click "Edit Collection" when viewing it
+3. Toggle "Cosmetic Only" option
+4. Only add cosmetic mods (skins, visual effects, UI changes)
+
+<Warning>
+Don't mark collections as "Cosmetic Only" if they contain gameplay-changing mods. This can cause server compatibility issues.
+</Warning>
+
+## Managing Collections
+
+### Collections Panel
+
+The right side panel on the Mods page shows your collections:
+
+- **Grid View**: Visual grid of all your collections
+- **Custom Icons**: Each collection can have a custom image
+- **Quick Info**: Mod count displayed on each collection card
+- **Click to Activate**: Single click to enable the collection
+
+### Editing Collections
+
+<Steps>
+  <Step title="Open Collection">
+    Click a collection in the Collections panel to open it
+  </Step>
+  <Step title="Enter Edit Mode">
+    Click the edit button in the collection view
+  </Step>
+  <Step title="Modify Mods">
+    Add or remove mods using the editor interface
+  </Step>
+  <Step title="Update Metadata">
+    Change the collection name, icon, or cosmetic flag
+  </Step>
+  <Step title="Save Changes">
+    Click save to update the collection
+  </Step>
+</Steps>
+
+### Adding Mods to Collections
+
+Several ways to add mods:
+
+<Tabs>
+  <Tab title="During Creation">
+    Select mods first, then create collection - selected mods are automatically added
+  </Tab>
+  
+  <Tab title="Edit Mode">
+    Open collection in edit mode, then select mods from your library to add
+  </Tab>
+  
+  <Tab title="Drag & Drop">
+    Drag mods from the mod list onto a collection card (coming soon)
+  </Tab>
+</Tabs>
+
+### Removing Mods from Collections
+
+1. Open the collection in edit mode
+2. Find the mod you want to remove
+3. Click the remove icon (X) next to the mod
+4. Save the collection
+
+<Info>
+Removing a mod from a collection doesn't delete the mod file. The mod remains in your mods library.
+</Info>
+
+### Deleting Collections
+
+To delete a collection:
+
+1. Right-click the collection card (or use the menu button)
+2. Select "Delete Collection"
+3. Confirm the deletion
+
+<Warning>
+Deleting a collection only removes the collection itself, not the mods within it.
+</Warning>
+
+## Using Collections
+
+### Activating a Collection
+
+Enable all mods in a collection:
+
+- **Single Click**: Click the collection card to activate
+- **Auto-Switch**: Previous collections are deactivated (unless cosmetic-only)
+- **Instant Apply**: Changes take effect immediately
+
+### Collection Activation Behavior
+
+<AccordionGroup>
+  <Accordion title="Standard Collections">
+    When you activate a standard collection:
+    
+    1. All currently enabled mods are disabled
+    2. All mods in the collection are enabled
+    3. Collection becomes your active configuration
+    
+    <Tip>
+    Perfect for switching between completely different mod loadouts.
+    </Tip>
+  </Accordion>
+
+  <Accordion title="Cosmetic Collections">
+    When you activate a cosmetic collection:
+    
+    1. Gameplay mods remain enabled
+    2. Other cosmetic mods may be kept or replaced (based on settings)
+    3. Visual appearance changes without affecting server compatibility
+    
+    <Tip>
+    Great for personalizing your look without changing gameplay mods required by servers.
+    </Tip>
+  </Accordion>
+
+  <Accordion title="Multiple Collections">
+    You can have multiple collections active if:
+    
+    - All active collections are marked as cosmetic-only
+    - The collections don't have conflicting mods
+    - Server allows cosmetic mixing
+  </Accordion>
+</AccordionGroup>
+
+### Deactivating Collections
+
+To turn off a collection:
+
+- Click the collection again to toggle it off
+- Activate a different collection
+- Manually disable individual mods
+
+## Custom Collection Icons
+
+Personalize your collections with custom images:
+
+### Adding an Icon
+
+<Steps>
+  <Step title="Edit Collection">
+    Open the collection and enter edit mode
+  </Step>
+  <Step title="Click Icon Area">
+    Click the icon placeholder at the top of the collection editor
+  </Step>
+  <Step title="Choose Image">
+    Select an image file from your computer (PNG, JPG, WebP)
+  </Step>
+  <Step title="Crop & Adjust">
+    Use the built-in cropping tool to frame your image perfectly
+  </Step>
+  <Step title="Save">
+    Save the collection with its new icon
+  </Step>
+</Steps>
+
+### Icon Requirements
+
+- **Supported Formats**: PNG, JPG, JPEG, WebP
+- **Recommended Size**: 512x512 pixels or larger
+- **Aspect Ratio**: Square (1:1) works best
+- **File Size**: Under 5MB recommended
+
+<Tip>
+Use images related to your collection theme:
+- Clone trooper for Clone Wars collections
+- Lightsaber for Jedi/Sith collections  
+- Map screenshots for location-specific collections
+- Character portraits for hero collections
+</Tip>
+
+## Exporting & Sharing Collections
+
+### Export a Collection
+
+Share your mod configuration with friends:
+
+1. Open the collection you want to share
+2. Click the export button
+3. Choose export format:
+   - **KBC File**: Kyber Collection file with all metadata
+   - **Text List**: Simple list of mod names and versions
+4. Save the file to share
+
+### Import a Collection
+
+Load a collection someone shared with you:
+
+<Steps>
+  <Step title="Get Collection File">
+    Obtain the `.kbc` collection file from another user
+  </Step>
+  <Step title="Import">
+    Click "Import Collection" in the Collections panel
+  </Step>
+  <Step title="Select File">
+    Choose the `.kbc` file from your downloads
+  </Step>
+  <Step title="Review">
+    Kyber shows which mods you have vs. need to download
+  </Step>
+  <Step title="Download Missing">
+    Automatically download any mods you don't have (optional)
+  </Step>
+  <Step title="Confirm">
+    Import the collection into your library
+  </Step>
+</Steps>
+
+<Info>
+Imported collections include:
+- Collection name and icon
+- Full list of required mods with versions
+- Cosmetic-only flag
+- Mod links for easy downloading
+</Info>
+
+### Collection File Format
+
+KBC files (`.kbc`) contain:
+
+```json
+{
+  "id": "unique-collection-id",
+  "title": "Clone Wars Immersion",
+  "isCosmetic": false,
+  "icon": "base64-encoded-image-data",
+  "mods": [
+    {
+      "name": "Better Clone Troopers",
+      "version": "2.1.0",
+      "link": "https://nexusmods.com/..."
+    }
+  ]
+}
+```
+
+## Practical Use Cases
+
+### Server-Specific Collections
+
+Create collections for servers you frequently join:
+
+<CardGroup cols={2}>
+  <Card title="Official Vanilla" icon="certificate">
+    Empty collection or vanilla cosmetics only for official servers
+  </Card>
+  <Card title="Community Server A" icon="server">
+    Exact mods required by your favorite modded server
+  </Card>
+  <Card title="Hardcore Realism" icon="shield">
+    Collection for realistic gameplay servers
+  </Card>
+  <Card title="Event Server" icon="calendar">
+    Special mods for weekend events
+  </Card>
+</CardGroup>
+
+### Cosmetic Themes
+
+Organize cosmetic mods by theme:
+
+- **Clone Wars Era**: Clone trooper legions, prequel-era skins
+- **Original Trilogy**: Classic stormtroopers, OT hero skins
+- **Realistic Graphics**: HD textures, lighting improvements, reshades
+- **Immersive Audio**: Sound replacements and voice lines
+
+### Content Creation
+
+Collections for filming or screenshots:
+
+- **Cinematic**: Mods that enhance visual quality for videos
+- **Machinima**: Custom skins and maps for storytelling
+- **Photography**: Best lighting and character skins for screenshots
+
+## Collection Best Practices
+
+<AccordionGroup>
+  <Accordion title="Descriptive Names">
+    Use clear, descriptive names for your collections:
+    
+    Good:
+    - "Clone Wars - 501st Legion"
+    - "Realistic Graphics Pack"
+    - "Community Server: Rebellion"
+    
+    Avoid:
+    - "Collection 1"
+    - "Mods"
+    - "Test"
+  </Accordion>
+
+  <Accordion title="Mark Cosmetics Correctly">
+    Only mark collections as "Cosmetic Only" if they contain exclusively cosmetic mods.
+    
+    This ensures:
+    - You can mix cosmetic collections freely
+    - Server compatibility is maintained
+    - No confusion about gameplay changes
+  </Accordion>
+
+  <Accordion title="Regular Updates">
+    Keep collections updated:
+    
+    - Remove outdated mods
+    - Update mod versions when needed
+    - Check compatibility after game patches
+    - Clean up unused collections
+  </Accordion>
+
+  <Accordion title="Backup Important Collections">
+    Export collections you've spent time curating:
+    
+    - Prevents loss if you reinstall Kyber
+    - Easy to share with friends
+    - Can be re-imported anytime
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Collection Won't Activate">
+    **Common causes:**
+    - Missing mods in the collection
+    - Corrupted mod files
+    - Collection file is damaged
+    
+    **Solution:** Open the collection in edit mode, verify all mods are installed and not corrupted, remove problematic mods.
+  </Accordion>
+
+  <Accordion title="Mods Not Enabling">
+    **Check:**
+    - Mods are actually in the collection
+    - No conflicting collections active
+    - Mod files haven't been deleted
+    
+    **Solution:** Edit the collection to verify mod list, deactivate other collections, re-download missing mods.
+  </Accordion>
+
+  <Accordion title="Can't Import Collection">
+    **Possible issues:**
+    - Corrupted KBC file
+    - Wrong file format
+    - Missing mod links
+    
+    **Solution:** Re-download the KBC file, verify it's a valid collection file, manually find and download mods if links are broken.
+  </Accordion>
+
+  <Accordion title="Custom Icon Not Showing">
+    **Common causes:**
+    - Image file too large
+    - Unsupported format
+    - Image data corrupted
+    
+    **Solution:** Use a smaller image (under 5MB), ensure it's PNG/JPG/WebP format, try re-uploading the icon.
+  </Accordion>
+</AccordionGroup>
+
+## Advanced Collection Management
+
+### Duplicate Detection
+
+Kyber prevents duplicate mods in collections:
+
+- **Automatic Checking**: Adding a mod already in the collection shows a warning
+- **Version Tracking**: Can have same mod with different versions
+- **Duplicate Dialog**: Prompts you to replace or keep existing mod
+
+### Collection Metadata
+
+Each collection stores:
+
+- **Local ID**: Unique identifier for the collection
+- **Creation Date**: When the collection was created
+- **Last Modified**: Last time the collection was edited
+- **Mod Count**: Number of mods in the collection
+- **Total Size**: Combined file size of all mods
+
+### Storage Location
+
+Collections are stored locally:
+
+- **Location**: `%APPDATA%/Kyber/collections/`
+- **Format**: Hive database for fast access
+- **Backup**: Recommend exporting important collections
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Mod Support" icon="puzzle-piece" href="/features/mod-support">
+    Learn about mod installation and management
+  </Card>
+  <Card title="Server Browser" icon="server" href="/features/server-browser">
+    Find servers that match your collections
+  </Card>
+  <Card title="Multiplayer" icon="users" href="/features/multiplayer">
+    Host servers with collection configs
+  </Card>
+</CardGroup>

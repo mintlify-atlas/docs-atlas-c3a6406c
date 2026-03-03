@@ -1,0 +1,474 @@
+---
+title: Map Rotation Builder
+description: Create and manage custom map rotations for your Kyber servers
+---
+
+## Overview
+
+The Map Rotation Builder allows you to create custom sequences of maps and game modes for your server. Players will cycle through your rotation automatically, creating a dynamic gameplay experience.
+
+## Accessing the Rotation Builder
+
+<Steps>
+  <Step title="Navigate to Server Host">
+    Open the Server Host section in the Kyber Launcher.
+  </Step>
+  
+  <Step title="Open Map Rotation Tab">
+    Click the "Map Rotation" tab to access the builder.
+  </Step>
+  
+  <Step title="View Current Rotation">
+    Your current rotation is displayed in the main area, with available maps on the right.
+  </Step>
+</Steps>
+
+## Building a Rotation
+
+### Adding Maps
+
+<Steps>
+  <Step title="Select Game Mode">
+    Choose a game mode from the mode list on the right side.
+  </Step>
+  
+  <Step title="Browse Available Maps">
+    View all maps compatible with the selected mode.
+  </Step>
+  
+  <Step title="Add to Rotation">
+    Click or drag a map to add it to your rotation.
+  </Step>
+  
+  <Step title="Repeat">
+    Continue adding map/mode combinations until your rotation is complete.
+  </Step>
+</Steps>
+
+### Reordering Maps
+
+The rotation order determines the sequence players experience:
+
+1. **Drag and drop** entries to reorder
+2. Maps play **from top to bottom**
+3. After the last map, rotation loops back to the first
+
+<Tip>
+Place popular maps at strategic intervals to maintain player engagement throughout the rotation.
+</Tip>
+
+### Removing Maps
+
+To remove a map from your rotation:
+
+1. Hover over the map entry
+2. Click the remove/delete button
+3. The entry is immediately removed
+
+<Warning>
+You must have at least one map in your rotation before starting a server.
+</Warning>
+
+## Rotation Format
+
+Rotations are stored in a simple text format from source/Launcher/lib/features/map_rotation/helper/map_rotation_helper.dart:9-17:
+
+```text
+MODE:MAP_PATH
+```
+
+Example:
+
+```text
+HeroesVersusVillains:S5_1/Levels/MP/Geonosis_01/Geonosis_01
+Supremacy:S5_1/Levels/MP/Geonosis_01/Geonosis_01
+GalacticAssault:S6/Levels/MP/Scarif_01/Scarif_01
+Blast:S2/Levels/MP/Theed_01/Theed_01
+```
+
+<Note>
+The format uses colons (`:`) to separate mode from map path. Empty lines and lines starting with `#` are ignored.
+</Note>
+
+## Importing Rotations
+
+### From File
+
+<Steps>
+  <Step title="Click Import">
+    In the Map Rotation tab, click the Import button.
+  </Step>
+  
+  <Step title="Select File">
+    Choose a `.txt` or `.kbrotation` file.
+  </Step>
+  
+  <Step title="Validate Entries">
+    The launcher validates each map/mode combination.
+  </Step>
+  
+  <Step title="Load Rotation">
+    Valid entries are loaded into your rotation builder.
+  </Step>
+</Steps>
+
+From source/Launcher/lib/features/server_host/widgets/create_server/map_rotation_page.dart:127-179, the import process:
+
+```dart
+final rotation = <Map<String, String>>[];
+
+for (final line in lines) {
+  if (line.trim().isEmpty || line.startsWith('#')) {
+    continue;
+  }
+
+  final parts = line.split(':');
+  if (parts.length == 2) {
+    rotation.add({
+      'mode': parts[0],
+      'map': parts[1],
+    });
+  }
+}
+```
+
+### From URL
+
+Kyber supports protocol URLs for sharing rotations:
+
+```
+kyber://rotation?file=/path/to/rotation.kbrotation
+```
+
+Clicking this link in a browser automatically imports the rotation into the launcher.
+
+### Validation
+
+During import, the launcher:
+
+1. Checks if mode names are valid
+2. Verifies maps exist for each mode
+3. Filters out invalid entries
+4. Reports any errors
+
+<Warning>
+Custom maps from mods will be marked as invalid if the mod isn't in your currently selected collection.
+</Warning>
+
+## Exporting Rotations
+
+### Export Dialog
+
+<Steps>
+  <Step title="Open Export">
+    Click the Export button in the Map Rotation tab.
+  </Step>
+  
+  <Step title="Choose Format">
+    Select between:
+    - `.txt` format (universal, CLI compatible)
+    - `.kbrotation` format (Kyber native, includes metadata)
+  </Step>
+  
+  <Step title="Select Location">
+    Choose where to save the file.
+  </Step>
+  
+  <Step title="Save">
+    The rotation is exported and ready to share.
+  </Step>
+</Steps>
+
+From source/Launcher/lib/features/map_rotation/dialogs/export_rotation_dialog.dart:102-105:
+
+```dart
+final rotation = context.read<MapRotationCubit>().state.maps;
+
+for (final entry in rotation) {
+  buffer.writeln('${entry.mode}:${entry.map}');
+}
+```
+
+### Sharing Rotations
+
+Exported rotations can be shared:
+
+- Upload to file sharing services
+- Share via Discord/forums
+- Include in mod collection packages
+- Distribute with server announcements
+
+## Custom Maps and Modes
+
+### Mod-Based Maps
+
+When you select a mod collection with custom maps:
+
+1. Custom maps appear in the map list
+2. They're marked with a special indicator
+3. Rotation builder validates against the selected collection
+4. Custom map metadata is loaded from mod files
+
+From source/Launcher/lib/features/server_host/widgets/create_server/map_rotation_page.dart:384:
+
+```text
+Custom map not found, this can happen if the map is not part of 
+the current mod collection. This map will be ignored when starting 
+the server.
+```
+
+<Tip>
+Always select your mod collection **before** building a rotation with custom maps.
+</Tip>
+
+### Custom Game Modes
+
+Mods can also add custom game modes:
+
+- Modes appear in the mode selector
+- Custom mode icons are displayed
+- Max player counts are validated
+- Mode-specific rules are applied
+
+## Using Rotations with Servers
+
+### In the Launcher
+
+When hosting from the launcher:
+
+1. Build your rotation in the Map Rotation tab
+2. The rotation is automatically used when you click "Start Server"
+3. No export is necessary
+
+### With the CLI
+
+Export your rotation and use it with the CLI:
+
+```bash
+kyber_cli start_server \
+  --server-name "Rotating Maps" \
+  --rotation-file /path/to/rotation.txt \
+  --credentials "username:password"
+```
+
+### With Docker
+
+For Docker deployments, encode your rotation as base64:
+
+```bash
+cat rotation.txt | base64
+```
+
+Then set as an environment variable:
+
+```yaml
+environment:
+  KYBER_MAP_ROTATION: "SGVyb2VzVmVyc3VzVmlsbGFpbnM7UzVfMS9MZXZlbHMvTVAvR2..."
+```
+
+From source/CLI/lib/commands/start_server_command.dart:185-191:
+
+```dart
+if (Platform.environment.containsKey('KYBER_MAP_ROTATION')) {
+  data = utf8
+      .decode(base64.decode(Platform.environment['KYBER_MAP_ROTATION']!))
+      .split('\n');
+}
+```
+
+## Available Game Modes
+
+Standard Battlefront II modes supported:
+
+| Mode | Description | Players |
+|------|-------------|----------|
+| **Galactic Assault** | Large-scale objective battles | 40 |
+| **Supremacy** | Capital ship battles | 40 |
+| **Heroes vs Villains** | 4v4 hero combat | 8 |
+| **Hero Showdown** | 2v2 hero duels | 4 |
+| **Blast** | Team deathmatch | 20 |
+| **Strike** | Small-scale objectives | 16 |
+| **Extraction** | Shipment escort | 16 |
+| **Ewok Hunt** | Survival mode | 20 |
+| **Starfighter Assault** | Space battles | 24 |
+| **Hero Starfighters** | Hero ships only | 24 |
+
+<Note>
+Custom modes added by mods may support different player counts and have unique rules.
+</Note>
+
+## Map Selection Tips
+
+### Balanced Rotations
+
+Create diverse rotations by:
+
+- **Mixing eras**: Include Prequel, Original, and Sequel trilogy maps
+- **Varying modes**: Alternate between large and small modes
+- **Pacing**: Balance intense modes with more casual ones
+- **Length**: Consider match duration when ordering
+
+### Popular Combinations
+
+Effective rotation patterns:
+
+```text
+GalacticAssault:S5_1/Levels/MP/Geonosis_01/Geonosis_01
+HeroesVersusVillains:S2/Levels/MP/Kashyyyk_01/Kashyyyk_01
+Supremacy:S6/Levels/MP/Scarif_01/Scarif_01
+Blast:S1/Levels/MP/DeathStar02_01/DeathStar02_01
+```
+
+This provides:
+- Large-scale combat (GA)
+- Hero focus (HvV)
+- Another large mode (Supremacy)
+- Quick matches (Blast)
+
+### Era-Specific Rotations
+
+Create themed rotations:
+
+**Clone Wars Only:**
+```text
+Supremacy:S5_1/Levels/MP/Geonosis_01/Geonosis_01
+GalacticAssault:S2/Levels/MP/Kashyyyk_01/Kashyyyk_01
+Supremacy:S3/Levels/MP/Naboo_01/Naboo_01
+```
+
+**Galactic Civil War:**
+```text
+GalacticAssault:S1/Levels/MP/Hoth_01/Hoth_01
+Supremacy:S1/Levels/MP/Tatooine_01/Tatooine_01
+GalacticAssault:S1/Levels/MP/DeathStar02_01/DeathStar02_01
+```
+
+## Advanced Features
+
+### Map Rotation State
+
+The rotation state is persisted using Hive storage from source/Launcher/lib/features/map_rotation/models/map_rotation_entry.dart:5-20:
+
+```dart
+@HiveType(typeId: 21)
+class MapRotationEntry extends HiveObject {
+  @HiveField(0)
+  final String map;
+
+  @HiveField(1)
+  final String mode;
+
+  @HiveField(2)
+  final bool isCustom;
+}
+```
+
+This allows:
+- Rotation to persist between sessions
+- Undo/redo functionality
+- Quick rotation switching
+
+### Collection-Based Filtering
+
+Maps are filtered based on your selected collection from source/Launcher/lib/features/server_host/widgets/create_server/map_rotation/map_list.dart:56-62:
+
+```dart
+final collection = context
+    .read<HostCollectionCubit>()
+    .state
+    .selectedModCollection;
+
+MapHelper.getMapsForMode(
+  mode,
+  collection: collection,
+);
+```
+
+This ensures only compatible maps appear for your mod setup.
+
+## Troubleshooting
+
+### Import Failures
+
+**File Format Invalid:**
+- Ensure format is `MODE:MAP_PATH`
+- Check for proper line endings
+- Verify no special characters
+
+**Maps Not Found:**
+- Switch to the correct mod collection
+- Download required map mods
+- Verify map paths are correct
+
+**Empty Rotation After Import:**
+- No valid entries were found
+- Check console for error messages
+- Verify mode names match exactly
+
+### Server Won't Start
+
+If the server fails to start due to rotation issues:
+
+<Warning>
+"You need to add at least one map to the map rotation"
+</Warning>
+
+Ensure:
+1. At least one entry exists in your rotation
+2. All entries are valid for your mod collection
+3. Map paths are correctly formatted
+
+### Custom Maps Missing
+
+If custom maps don't appear:
+
+1. Verify the mod is in your selected collection
+2. Check the mod contains map category content
+3. Ensure mod is properly installed
+4. Try refreshing the mod list
+
+## Example Rotations
+
+### All-Modes Variety
+
+```text
+# Diverse gameplay rotation
+GalacticAssault:S5_1/Levels/MP/Geonosis_01/Geonosis_01
+HeroesVersusVillains:S2/Levels/MP/Theed_01/Theed_01
+Blast:S1/Levels/MP/DeathStar02_01/DeathStar02_01
+Supremacy:S6/Levels/MP/Scarif_01/Scarif_01
+Strike:S2/Levels/MP/Takodana_01/Takodana_01
+HeroShowdown:S2/Levels/MP/Kashyyyk_01/Kashyyyk_01
+```
+
+### Large-Scale Combat
+
+```text
+# Big battles only
+Supremacy:S5_1/Levels/MP/Geonosis_01/Geonosis_01
+GalacticAssault:S5_1/Levels/MP/Geonosis_01/Geonosis_01
+Supremacy:S2/Levels/MP/Kashyyyk_01/Kashyyyk_01
+GalacticAssault:S2/Levels/MP/Kamino_01/Kamino_01
+Supremacy:S6/Levels/MP/Scarif_01/Scarif_01
+```
+
+### Heroes Focus
+
+```text
+# Hero gameplay rotation
+HeroesVersusVillains:S2/Levels/MP/Theed_01/Theed_01
+HeroShowdown:S2/Levels/MP/Kashyyyk_01/Kashyyyk_01
+HeroesVersusVillains:S1/Levels/MP/Tatooine_01/Tatooine_01
+HeroShowdown:S3/Levels/MP/Naboo_01/Naboo_01
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Host a Server" icon="server" href="/guides/hosting-servers">
+    Use your rotation to host a server
+  </Card>
+  <Card title="Installing Mods" icon="download" href="/guides/installing-mods">
+    Add custom maps with mods
+  </Card>
+</CardGroup>

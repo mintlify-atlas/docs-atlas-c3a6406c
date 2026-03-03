@@ -1,0 +1,386 @@
+---
+title: Installing and Managing Mods
+description: Learn how to install, organize, and manage mods using the Kyber Launcher
+---
+
+## Overview
+
+Kyber uses **Frosty mods** (`.fbmod` files) and **collections** to customize Star Wars Battlefront II. The launcher provides a complete mod management system with automatic detection, categorization, and collection building.
+
+## Mod Directory Setup
+
+### Initial Configuration
+
+<Steps>
+  <Step title="Launch Kyber">
+    Open the Kyber Launcher for the first time.
+  </Step>
+  
+  <Step title="Select Mods Directory">
+    During setup, choose a directory to store your mods. This should have at least 20 GB of free space.
+  </Step>
+  
+  <Step title="Automatic Detection">
+    The launcher automatically scans this directory and detects all `.fbmod` and `.fbcollection` files.
+  </Step>
+</Steps>
+
+<Tip>
+The launcher watches your mods directory and automatically refreshes when files are added or removed.
+</Tip>
+
+## Installing Mods
+
+### Method 1: Download from Mod Browser
+
+<Steps>
+  <Step title="Open Mod Browser">
+    Navigate to the Mod Browser in the launcher.
+  </Step>
+  
+  <Step title="Search for Mods">
+    Browse available mods or use the search function.
+  </Step>
+  
+  <Step title="Download">
+    Click the download button. Mods are automatically saved to your mods directory.
+  </Step>
+  
+  <Step title="Wait for Completion">
+    The launcher will download and verify the mod file.
+  </Step>
+</Steps>
+
+### Method 2: Manual Installation
+
+<Steps>
+  <Step title="Download Mod File">
+    Download `.fbmod` or `.fbcollection` files from external sources (NexusMods, Discord, etc.).
+  </Step>
+  
+  <Step title="Move to Mods Directory">
+    Copy the file to your configured mods directory.
+  </Step>
+  
+  <Step title="Automatic Detection">
+    The launcher will automatically detect the new mod within 2 seconds.
+  </Step>
+</Steps>
+
+### Method 3: Drag and Drop
+
+The launcher supports drag and drop for `.fbmod`, `.fbcollection`, `.kbcollection`, and `.kbrotation` files:
+
+1. Drag the file into the launcher window
+2. The launcher will prompt to install
+3. Mods are automatically copied to your mods directory
+
+<Note>
+The launcher automatically filters and categorizes mods by type during the loading process.
+</Note>
+
+## Mod File Types
+
+### Frosty Mods (.fbmod)
+
+Standard mod files created with Frosty Mod Manager. The launcher reads mod metadata including:
+
+- **Name and Version**: From mod manifest
+- **Category**: Gameplay, Maps, Cosmetic, etc.
+- **File Size**: For download tracking
+- **Custom Data**: Custom modes, maps, and level declarations
+
+### Frosty Collections (.fbcollection)
+
+Collections of multiple mods bundled together. The launcher:
+
+1. Reads the collection manifest
+2. Expands all referenced mods
+3. Validates each mod exists
+4. Loads metadata for all contained mods
+
+From source/CLI/lib/utils/mod_helper.dart:13-36:
+
+```dart
+static List<FrostyMod> expandMods(List<FrostyMod> mods) {
+  final mods = <FrostyMod>[];
+  for (final mod in mods) {
+    if (!mod.isCollection) {
+      mods.add(mod);
+    } else {
+      // Expand collection into individual mods
+      for (final modPath in getCollectionMods(mod)) {
+        final frostyMod = ModReader(mod.openSync(), modPath).readMod();
+        if (frostyMod != null) {
+          mods.add(frostyMod);
+        }
+      }
+    }
+  }
+  return mods;
+}
+```
+
+### Kyber Collections (.kbcollection)
+
+Kyber's native collection format with enhanced features:
+
+- Metadata and descriptions
+- Custom thumbnails
+- Load order configuration
+- Collection versioning
+- Cross-platform compatibility
+
+## Creating Mod Collections
+
+### Using the Collection Builder
+
+<Steps>
+  <Step title="Navigate to Mods">
+    Go to the Mods section in the launcher.
+  </Step>
+  
+  <Step title="Create New Collection">
+    Click "New Collection" or use the URL `kyber://mods?collection=new`.
+  </Step>
+  
+  <Step title="Add Mods">
+    Select mods from your library to include in the collection.
+  </Step>
+  
+  <Step title="Configure Load Order">
+    Drag and drop mods to set the load order. Mods at the bottom load last and override earlier mods.
+  </Step>
+  
+  <Step title="Set Metadata">
+    Configure:
+    - Collection name
+    - Description
+    - Custom thumbnail (optional)
+  </Step>
+  
+  <Step title="Save Collection">
+    Save as a `.kbcollection` file. This creates a reusable, shareable collection.
+  </Step>
+</Steps>
+
+### Collection Export
+
+Export collections for sharing:
+
+1. Open your collection
+2. Click "Export Collection"
+3. Choose export options:
+   - Include mod files (creates larger archive)
+   - Metadata only (requires others to download mods separately)
+
+## Mod Categories
+
+The launcher organizes mods into categories from source/Launcher/lib/features/mods/services/mod_service.dart:71-82:
+
+| Category | Description | Server Compatible |
+|----------|-------------|-------------------|
+| **Gameplay** | Game mechanics, balance changes | Yes |
+| **Maps** | New maps and map modifications | Yes |
+| **Cosmetic** | Visual changes, skins | No |
+| **Audio** | Sound replacements | No |
+| **UI** | Interface modifications | No |
+| **Other** | Miscellaneous mods | Varies |
+
+<Warning>
+Only **Gameplay** and **Maps** mods are loaded when hosting or joining servers. Cosmetic mods work in offline/instant action only.
+</Warning>
+
+## Advanced Management
+
+### Changing Mods Directory
+
+<Steps>
+  <Step title="Open Settings">
+    Navigate to Settings in the launcher.
+  </Step>
+  
+  <Step title="Select New Directory">
+    Choose a new directory for mod storage.
+  </Step>
+  
+  <Step title="Move Existing Mods">
+    The launcher will prompt to move existing mods to the new location.
+  </Step>
+  
+  <Step title="Automatic Rescan">
+    The launcher rescans and indexes all mods in the new directory.
+  </Step>
+</Steps>
+
+### Duplicate Detection
+
+The launcher automatically detects duplicate mods based on:
+
+- Mod name
+- Version number
+- File hash
+
+Duplicates are flagged in the mod list for cleanup.
+
+### Hidden Mods
+
+Mods with the `.bsm` extension are hidden from the main mod list but still loaded. This is used for:
+
+- BSM plugin mods
+- Internal launcher mods
+- Background modifications
+
+From source/Launcher/lib/features/mods/services/mod_service.dart:128-133:
+
+```dart
+_mods = [
+  ...x[0].where((e) => !extension(e.filename, 2).contains('.bsm')),
+  ...x[1],
+];
+_hiddenMods = x[0]
+    .where((e) => extension(e.filename, 2).contains('.bsm'))
+    .toList();
+```
+
+## Server Mod Requirements
+
+### Joining Servers with Mods
+
+When joining a modded server:
+
+<Steps>
+  <Step title="Check Requirements">
+    The server browser displays required mods with download links.
+  </Step>
+  
+  <Step title="Download Missing Mods">
+    Click download buttons for any missing mods.
+  </Step>
+  
+  <Step title="Select Collection">
+    Choose a collection that matches the server's mod requirements, or create a new one.
+  </Step>
+  
+  <Step title="Join Server">
+    Once all mods are installed, click Join.
+  </Step>
+</Steps>
+
+### Auto-Matching Collections
+
+The launcher automatically matches your collections to server requirements based on:
+
+1. Gameplay mods only (cosmetic mods are ignored)
+2. Exact version matching
+3. Load order compatibility
+
+From source/Launcher/lib/features/server_browser/dialogs/join_server_dialog.dart:55-78:
+
+```dart
+for (final collection in collectionBox.values) {
+  final gameplayMods = collection
+      .mods
+      .where((e) => e.category == 'Gameplay' || e.category == 'Maps')
+      .toList();
+
+  if (ListEquality().equals(gameplayMods, mods) || 
+      collection.isCosmetic || 
+      gameplayMods.isEmpty) {
+    collections.add(collection);
+  }
+}
+```
+
+<Tip>
+Create a "No Mods" collection for joining vanilla servers without disabling your mod setup.
+</Tip>
+
+## Custom Modes and Maps
+
+Some mods include custom game modes and maps. The launcher extracts this metadata:
+
+### Custom Mode Data
+- Mode name and ID
+- Maximum players
+- Mode icon/image
+- Supported maps
+
+### Custom Map Data
+- Map name and ID
+- Supported modes
+- Map preview image
+- Level path
+
+This data is used in the map rotation builder and server browser.
+
+## Troubleshooting
+
+### Mods Not Appearing
+
+1. **Check file extension**: Only `.fbmod` and `.fbcollection` files are supported
+2. **Verify directory**: Ensure mods are in the configured directory
+3. **Force refresh**: Restart the launcher to trigger a manual rescan
+4. **Check permissions**: Ensure the launcher has read access to the mods directory
+
+### Collection Load Failures
+
+<Warning>
+If a mod referenced in a collection is missing, the collection may fail to load completely.
+</Warning>
+
+To fix:
+1. Download missing mods
+2. Edit the collection to remove missing references
+3. Create a new collection with available mods
+
+### Performance Issues
+
+With large mod libraries (500+ mods):
+
+- The initial scan may take 30-60 seconds
+- Use collections to organize mods
+- Remove unused mods to improve load times
+
+The launcher uses parallel processing (2 worker threads) to load mods efficiently.
+
+### File Watcher Issues
+
+If automatic detection stops working:
+
+1. Check that the mods directory still exists
+2. Verify no permission changes occurred
+3. Restart the launcher to reset the file watcher
+
+The watcher has a 2-second debounce to prevent excessive refreshes.
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Organize with Collections" icon="folder">
+    Create separate collections for different playstyles (e.g., "Vanilla+", "Total Conversion", "Cosmetic Only")
+  </Card>
+  
+  <Card title="Keep Mods Updated" icon="arrow-up">
+    Regularly check for mod updates to ensure compatibility
+  </Card>
+  
+  <Card title="Backup Collections" icon="floppy-disk">
+    Export important collections to backup files
+  </Card>
+  
+  <Card title="Test Before Hosting" icon="vial">
+    Test mod combinations in instant action before hosting a server
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Host a Server" icon="server" href="/guides/hosting-servers">
+    Learn how to host servers with your mod collections
+  </Card>
+  <Card title="Map Rotations" icon="map" href="/guides/map-rotations">
+    Build custom map rotations with modded maps
+  </Card>
+</CardGroup>

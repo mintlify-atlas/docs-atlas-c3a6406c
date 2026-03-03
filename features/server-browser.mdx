@@ -1,0 +1,195 @@
+---
+title: 'Server Browser'
+description: 'Discover and join community-hosted multiplayer servers with advanced filtering and real-time server information'
+icon: 'server'
+---
+
+The Server Browser is your gateway to Kyber's community-hosted multiplayer experience. Browse active servers, filter by game mode and region, and join matches with a single click.
+
+## Overview
+
+The Server Browser provides a comprehensive view of all active Kyber servers, displaying real-time information about player counts, game modes, maps, and required mods. The interface is designed for quick discovery and seamless server joining.
+
+## Key Features
+
+### Real-Time Server List
+
+View all active servers with live updates:
+
+- **Player Count**: See current players vs. maximum capacity at a glance
+- **Server Status**: Real-time status indicators show server availability
+- **Pagination**: Navigate through server pages with arrow controls
+- **Auto-Refresh**: Server list automatically updates to reflect current state
+
+### Advanced Filtering
+
+Narrow down your search with powerful filter options:
+
+<AccordionGroup>
+  <Accordion title="Region Filter">
+    Filter servers by geographic location to find the lowest ping matches:
+    - North America
+    - South America
+    - Europe
+    - Asia
+    - Oceania
+    - Africa
+    - All Regions (default)
+  </Accordion>
+
+  <Accordion title="Server Type">
+    Choose from different server types:
+    - **All**: Show all available servers
+    - **Official**: Kyber-hosted official servers
+    - **Custom**: Community-hosted custom servers
+    - **Private**: Password-protected servers
+    - **Event**: Special event servers
+  </Accordion>
+
+  <Accordion title="Game Type">
+    Filter by mod status:
+    - **All**: Both modded and vanilla servers
+    - **Modded**: Servers running gameplay mods
+    - **Vanilla**: Servers without gameplay modifications
+  </Accordion>
+
+  <Accordion title="Game Mode">
+    Select specific game modes:
+    - Supremacy
+    - Galactic Assault
+    - Heroes vs Villains
+    - Blast
+    - And more...
+  </Accordion>
+</AccordionGroup>
+
+### Search Functionality
+
+Use the search bar to find servers by name or description. The search filters in real-time as you type, making it easy to find specific servers or communities.
+
+## Server Information Panel
+
+When you select a server from the list, detailed information appears in the right panel:
+
+### Server Details
+
+- **Server Name & Description**: Full server information and host message
+- **Current Map**: Active map with custom map preview image (if available)
+- **Game Mode**: Current game mode being played
+- **Player List**: See who's currently playing (when available)
+- **Region Badge**: Geographic location indicator
+
+### Required Mods Display
+
+<Info>
+The server info panel shows all required mods with version numbers and download status. Kyber automatically detects which mods you have installed.
+</Info>
+
+For modded servers, you'll see:
+
+- **Mod Name & Version**: Each required mod listed clearly
+- **Installation Status**: Green checkmark if installed, download button if missing
+- **File Size**: Download size for mods you don't have
+- **Quick Download**: One-click mod installation from Nexus Mods or Kyber CDN
+
+### Multi-Instance Servers
+
+Some popular servers run multiple instances to accommodate more players:
+
+- **Instance Selector**: Choose between available instances of the same server
+- **Combined Player Count**: See total players across all instances
+- **Region Distribution**: View which regions each instance is hosted in
+
+## Joining Servers
+
+### One-Click Join
+
+Joining a server is simple:
+
+1. **Select a Server**: Click any server in the list to view details
+2. **Check Requirements**: Verify you have required mods installed
+3. **Click Join**: The "JOIN" button appears when you meet requirements
+4. **Auto-Launch**: Kyber automatically launches the game and connects you
+
+<Warning>
+If you're missing required mods, you'll need to download them first. Kyber can download and install them automatically when you click the mod download buttons.
+</Warning>
+
+### Password-Protected Servers
+
+Servers with a lock icon require a password:
+
+1. Click the password-protected server
+2. Enter the password in the dialog that appears
+3. Join as normal once authenticated
+
+### Full Server Handling
+
+- **Full Indicator**: Servers at capacity show a red "FULL" badge
+- **Admin Override**: Users with admin entitlements can join full servers
+- **Queue System**: Some servers may support queuing (coming soon)
+
+## Smart Mod Matching
+
+<Check>
+Kyber intelligently handles mod compatibility:
+</Check>
+
+### Automatic Detection
+
+- **Pre-Join Validation**: Kyber checks if you have the exact mod versions required
+- **Version Matching**: Ensures mod versions match server requirements exactly
+- **In-Game Switching**: If the game is already running, Kyber validates your active mods match the server
+
+### Cosmetic-Only Servers
+
+<Tip>
+Servers running only cosmetic mods (skins, visual changes) allow you to join with different cosmetic mods enabled. Gameplay mods must match exactly.
+</Tip>
+
+## Status Notifications
+
+The server browser displays platform-wide status messages:
+
+- **Warning Banner**: Important announcements appear at the top
+- **Service Status**: Real-time Kyber API status monitoring
+- **Maintenance Alerts**: Scheduled maintenance notifications
+
+## Best Practices
+
+### Finding Low-Ping Servers
+
+1. Filter by your geographic region first
+2. Look for servers with the region badge matching your location
+3. Multi-region servers show their primary region
+
+### Joining Modded Matches
+
+1. Allow time for mod downloads before joining
+2. Kyber verifies mod integrity automatically
+3. Required mods are downloaded to your mods folder
+4. Collections can help manage frequently-used mod sets
+
+### Server Browser Tips
+
+- **Refresh Button**: Click the swap icon to manually refresh the server list
+- **Favorites**: Bookmark frequently-played servers (coming soon)
+- **Recent Servers**: Quick access to recently joined servers (coming soon)
+- **Filter Persistence**: Your filter settings are saved between sessions
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Multiplayer" icon="users" href="/features/multiplayer">
+    Learn about community-hosted multiplayer
+  </Card>
+  <Card title="Mod Support" icon="puzzle-piece" href="/features/mod-support">
+    Understanding Kyber's mod system
+  </Card>
+  <Card title="Collections" icon="layer-group" href="/features/collections">
+    Manage mod sets with collections
+  </Card>
+  <Card title="Voice Chat" icon="microphone" href="/features/voice-chat">
+    Enable proximity voice in multiplayer
+  </Card>
+</CardGroup>

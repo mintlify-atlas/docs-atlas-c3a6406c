@@ -1,0 +1,416 @@
+---
+title: System Architecture
+description: Overview of KYBER's monorepo structure and component architecture
+---
+
+## Monorepo Overview
+
+KYBER is developed using a monorepo structure that contains multiple projects and shared packages. This approach allows for:
+
+- Unified versioning and dependency management
+- Shared code across multiple components
+- Simplified development workflow
+- Coordinated releases
+
+## Component Architecture
+
+```
+KYBER Repository
+├── Module/          # C++ game module
+├── Launcher/        # Flutter desktop app
+├── CLI/            # Command-line tools
+├── API/            # Go backend service
+├── Proxy/          # Rust server proxy
+├── Packages/       # Shared Dart packages
+└── ThirdParty/     # External dependencies
+```
+
+---
+
+## Module (C++)
+
+The Module is the core component that gets injected into the STAR WARS Battlefront II game client.
+
+### Technology Stack
+
+- **Language**: C++11
+- **Build System**: Bazel
+- **Platform**: Windows (MSVC)
+- **IDE**: Visual Studio Code with clangd
+
+### Key Responsibilities
+
+- Game memory manipulation and hooking
+- Custom game logic injection
+- Communication with API service via gRPC
+- Crash reporting via Sentry integration
+- WebSocket communication for real-time features
+
+### Architecture Patterns
+
+#### Memory Management
+
+- Uses game's native memory arenas instead of standard heap allocation
+- Arena-specific allocation for client vs server contexts
+- EASTL containers for STL replacements
+
+```cpp
+// Example: Server-side allocation
+Class* serverAllocatedClass = new (FB_SERVER_ARENA->alloc(sizeof(Class))) Class(args);
+
+// Example: Arena-aware string allocation
+reasonText = StringUtils::CopyWithArena("Timed out.", FB_CLIENT_ARENA);
+```
+
+#### Thread Safety
+
+- Uses `ThreadExecutor` for game logic interaction from non-main threads
+- `Mutex<>` wrapper for fields accessed from multiple threads
+
+```cpp
+// Example: Thread executor usage
+g_threadExecutor->Queue(GameThread_Server, [this, cmd]() {
+    g_program->m_console->EnqueueCommand(cmd);
+});
+
+// Example: Mutex usage
+MutexGuard<LoadLevelRequest> requestGuard = 
+    s_program->m_server->m_latestLoadLevelRequest.Lock();
+```
+
+#### Function Hooking
+
+- Hook Manager system for intercepting game functions
+- Suffix `Hk` for all hooked functions
+- Trampoline pattern for calling original implementations
+
+```cpp
+// Example hook declaration
+static const auto trampoline = HookManager::Call(funcName);
+```
+
+### Third-Party Dependencies
+
+- **Zydis**: x86/x64 disassembler
+- **Sentry**: Crash reporting
+- **IXWebSocket**: WebSocket client/server
+- **ImGui**: Debug UI
+- **spdlog**: Logging
+- **fmt**: String formatting
+
+---
+
+## Launcher (Flutter/Dart)
+
+The Launcher is a cross-platform desktop application that serves as the primary user interface.
+
+### Technology Stack
+
+- **Framework**: Flutter (master channel)
+- **Language**: Dart
+- **Platforms**: Windows, macOS, Linux
+- **State Management**: Bloc/Cubit
+- **Dependency Injection**: GetIt
+- **FFI**: Rust via flutter_rust_bridge
+
+### Feature-Based Architecture
+
+The Launcher follows a clean architecture with feature-based organization:
+
+```
+lib/
+├── core/
+│   ├── config/           # App-wide configuration
+│   ├── i18n/             # Internationalization
+│   ├── routing/          # Navigation
+│   ├── services/         # Core services
+│   └── utils/            # Shared utilities
+├── features/
+│   └── <feature>/
+│       ├── dialogs/      # Feature-specific dialogs
+│       ├── helper/       # Feature utilities
+│       ├── models/       # Data models
+│       ├── providers/    # State management (Cubits)
+│       ├── screens/      # Full-page UI
+│       ├── services/     # Business logic
+│       └── widgets/      # Reusable components
+└── shared/
+    └── ui/               # Shared UI components
+```
+
+### State Management
+
+- **Cubits** for feature-level state management
+- Located in `providers/` with `_cubit.dart` suffix
+- State classes defined alongside cubits
+- `BlocBuilder` for UI rebuilds
+- `BlocListener` for side effects
+
+### Dependency Injection
+
+- GetIt service locator via global `sl` instance
+- Services registered in `injection_container.dart`
+- Singleton pattern for shared services
+- Async initialization support
+
+### Naming Conventions
+
+| Type | Pattern | Example |
+|------|---------|--------|
+| Cubits | `<Feature>Cubit` | `ServerBrowserCubit` |
+| States | `<Feature>State` | `KyberStatusState` |
+| Services | `<Feature>Service` | `ModService` |
+| Helpers | `<Feature>Helper` | `MaximaHelper` |
+| Screens | `<Feature>` | `ServerBrowser` |
+
+---
+
+## CLI (Flutter/Dart)
+
+Command-line interface tools for server management and automation.
+
+### Technology Stack
+
+- **Framework**: Flutter CLI support
+- **Language**: Dart
+- **FFI**: Rust via flutter_rust_bridge
+- **Build Output**: Native executable
+
+### Key Features
+
+- Server management commands
+- Automated deployment
+- Configuration management
+- Integration with Maxima service
+
+### Dependencies
+
+- **maxima-service**: Background service for server operations
+- **maxima-bootstrap**: Bootstrapper for CLI operations
+- **rust_lib**: Native Rust library for performance-critical operations
+
+---
+
+## API (Go)
+
+Backend service providing REST and gRPC APIs.
+
+### Technology Stack
+
+- **Language**: Go 1.24+
+- **Communication**: gRPC, REST
+- **Protocol Buffers**: For service definitions
+
+### Project Structure
+
+```
+API/
+├── cmd/
+│   └── server/        # Main entry point
+├── internal/          # Private application code
+├── pkg/              # Public packages
+└── scripts/          # Build and utility scripts
+```
+
+### Key Responsibilities
+
+- User authentication and authorization
+- Server registry and matchmaking
+- Statistics and leaderboards
+- Mod repository management
+- WebSocket gateway for real-time updates
+
+---
+
+## Proxy (Rust)
+
+High-performance proxy for server connections.
+
+### Technology Stack
+
+- **Language**: Rust (nightly)
+- **Build System**: Cargo
+- **Protocol Buffers**: For communication protocols
+
+### Key Responsibilities
+
+- Connection proxying and load balancing
+- Protocol translation
+- Traffic monitoring and logging
+- DDoS mitigation
+
+---
+
+## Packages (Dart)
+
+Shared Dart packages used across Launcher and CLI.
+
+### Package Structure
+
+```
+Packages/
+├── kyber/              # Core KYBER package
+├── kyber_collection/   # Collection utilities
+├── nexus_gql/         # NexusMods GraphQL client
+└── nexus_bridge/      # NexusMods integration
+```
+
+### Workspace Management
+
+Managed via Melos for:
+
+- Unified dependency management
+- Code generation coordination
+- Cross-package versioning
+- Shared build scripts
+
+---
+
+## Communication Architecture
+
+### Module ↔ API Communication
+
+- **Protocol**: gRPC over HTTP/2
+- **Definition**: Protocol Buffers in `Module/Proto/`
+- **Services**:
+  - `kyber_api.proto`: API service definitions
+  - `kyber_interface.proto`: Interface contracts
+  - `kyber_common.proto`: Shared message types
+  - `mod_bridge.proto`: Mod system integration
+
+### Launcher/CLI ↔ API Communication
+
+- **Protocol**: gRPC (generated from Module proto files)
+- **Bindings**: Generated via `protoc` during `melos bootstrap`
+- **Location**: `Packages/kyber/lib/gen/`
+
+### Real-Time Features
+
+- **WebSocket**: IXWebSocket library for bi-directional communication
+- **Use Cases**:
+  - Live server status updates
+  - In-game notifications
+  - Chat systems
+  - Match coordination
+
+---
+
+## Build System Integration
+
+### Melos Workspace
+
+The root `pubspec.yaml` defines Melos scripts for coordinated builds:
+
+```yaml
+workspace:
+  - Launcher
+  - CLI
+  - Packages/kyber
+  - Packages/kyber_collection
+  - Packages/nexus_gql
+  - Packages/nexus_bridge
+```
+
+### Key Melos Scripts
+
+- `melos bootstrap`: Initialize all packages and generate code
+- `melos generate`: Run build_runner across packages
+- `melos generate_proto`: Generate Dart bindings from proto files
+- `melos generate_frb`: Generate FFI bindings for Rust
+- `melos build_launcher`: Build Launcher release
+- `melos build_cli`: Build CLI with dependencies
+
+### Protocol Buffer Flow
+
+<Steps>
+  <Step title="Define in Module">
+    Protocol definitions are maintained in `Module/Proto/*.proto`
+  </Step>
+  
+  <Step title="Generate for Go">
+    API generates Go code via `scripts/gen-proto.sh` or `.bat`
+  </Step>
+  
+  <Step title="Generate for Dart">
+    Melos `generate_proto` script generates Dart code to `Packages/kyber/lib/gen/`
+  </Step>
+  
+  <Step title="Shared across Launcher/CLI">
+    Both Launcher and CLI depend on `kyber` package for proto definitions
+  </Step>
+</Steps>
+
+---
+
+## Development Workflow
+
+### Initial Setup
+
+<Steps>
+  <Step title="Clone with submodules">
+    ```bash
+    git clone --recurse-submodules https://github.com/ArmchairDevelopers/Kyberv2.git
+    ```
+  </Step>
+  
+  <Step title="Bootstrap Dart/Flutter workspace">
+    ```bash
+    melos bootstrap
+    ```
+  </Step>
+  
+  <Step title="Build component of interest">
+    See [Building KYBER](/development/building) for component-specific instructions
+  </Step>
+</Steps>
+
+### Common Development Tasks
+
+#### Updating Protocol Buffers
+
+1. Modify `.proto` files in `Module/Proto/`
+2. Regenerate bindings:
+   ```bash
+   # For Dart
+   melos generate_proto
+   
+   # For Go
+   cd API && ./scripts/gen-proto.sh
+   ```
+
+#### Adding FFI Functions
+
+1. Update Rust code in `Launcher/rust/` or `CLI/rust/`
+2. Regenerate bindings:
+   ```bash
+   melos generate_frb
+   ```
+
+#### Module Development Cycle
+
+1. Make changes to C++ code
+2. Build: `bazel --output_user_root="C:\bz" build --config=release Kyber`
+3. Copy DLL: `copy Module\bazel-bin\Kyber.dll C:\ProgramData\Kyber\Module\Kyber.dll`
+4. Test with Launcher or CLI
+
+---
+
+## Code Standards
+
+Each component maintains its own coding standards. See [STANDARDS.md](https://github.com/ArmchairDevelopers/Kyberv2/blob/main/STANDARDS.md) for:
+
+- Module: C++11 conventions, hook patterns, memory management
+- Launcher: Dart/Flutter best practices, feature architecture
+- API: Go idioms and project structure
+- Proxy: Rust conventions
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Building KYBER" icon="hammer" href="/development/building">
+    Detailed build instructions for each component
+  </Card>
+  <Card title="Contributing" icon="code-pull-request" href="/development/overview">
+    Guidelines for contributing to the project
+  </Card>
+</CardGroup>
