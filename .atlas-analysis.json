@@ -1,0 +1,111 @@
+{
+  "projectType": "saas",
+  "projectName": "Kyber",
+  "projectDescription": "An open-source private server tool for Star Wars Battlefront II with community-hosted multiplayer, mod support, and server browser.",
+  "theme": "aspen",
+  "primaryColor": "#1e40af",
+  "lightColor": "#60a5fa",
+  "darkColor": "#1e3a8a",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "installation"
+            ]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              "features/server-browser",
+              "features/multiplayer",
+              "features/mod-support",
+              "features/voice-chat",
+              "features/collections"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/hosting-servers",
+              "guides/installing-mods",
+              "guides/map-rotations",
+              "guides/server-moderation"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Development",
+        "groups": [
+          {
+            "group": "Contributing",
+            "pages": [
+              "development/overview",
+              "development/building",
+              "development/architecture"
+            ]
+          },
+          {
+            "group": "Components",
+            "pages": [
+              "development/launcher",
+              "development/module",
+              "development/api",
+              "development/proxy",
+              "development/cli"
+            ]
+          },
+          {
+            "group": "API Reference",
+            "pages": [
+              "api/authentication",
+              "api/server-management",
+              "api/statistics"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Community",
+        "groups": [
+          {
+            "group": "Support",
+            "pages": [
+              "community/faq",
+              "community/troubleshooting",
+              "community/changelog"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Community-hosted multiplayer servers",
+    "Full mod support with Nexus Mods integration",
+    "Server browser with filtering and search",
+    "Proximity voice chat",
+    "Mod collections and management",
+    "Map rotation builder",
+    "Server moderation tools",
+    "Discord and Patreon integration"
+  ],
+  "publicApiSurface": [
+    "Authentication API (gRPC)",
+    "Server Management API (gRPC)",
+    "Server Browser API (gRPC)",
+    "Statistics API (gRPC)",
+    "VoIP API (gRPC)",
+    "CLI: kyber_cli download-game",
+    "CLI: kyber_cli start-game",
+    "CLI: kyber_cli start-server",
+    "CLI: kyber_cli get-token",
+    "Module: Kyber.dll injection interface"
+  ]
+}
