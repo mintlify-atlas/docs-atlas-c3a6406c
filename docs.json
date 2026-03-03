@@ -80,6 +80,9 @@
             "pages": [
               "api/authentication",
               "api/server-management",
+              "api/server-browser",
+              "api/voip",
+              "api/reports",
               "api/statistics"
             ]
           }

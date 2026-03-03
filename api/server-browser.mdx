@@ -1,0 +1,344 @@
+---
+title: "Server Browser API"
+description: "Browse, filter, and manage game servers in the Kyber network"
+---
+
+The Server Browser API provides endpoints for discovering, filtering, and managing game servers. This API powers the server browser in the Kyber Launcher and handles server registration, updates, and player join validation.
+
+## Overview
+
+Server hosts register their game servers with the API, and players use the server browser to discover and join available servers. The API handles server validation, mod compatibility checking, and real-time server status updates.
+
+<Info>
+Most endpoints require authentication. Server registration and updates require the server to be owned by the authenticated user.
+</Info>
+
+## Core Methods
+
+### GetServers
+
+Retrieve a list of all public servers.
+
+**Endpoint:** `ServerBrowserServer.GetServers`
+
+**Request:**
+
+<ParamField body="request" type="ServerListRequest">
+  Empty request object
+</ParamField>
+
+**Response:**
+
+<ResponseField name="servers" type="Server[]" required>
+  Array of public server objects with current status, player counts, maps, and mods
+</ResponseField>
+
+**Implementation:**
+
+```go source/API/internal/rpc/server_browser.go:282-303
+func (s *ServerBrowserServer) GetServers(ctx context.Context, _ *pbapi.ServerListRequest) (*pbapi.ServerList, error) {
+	servers, err := s.store.Servers.GetPublic(ctx)
+	if err != nil {
+		logger.L().Error("Failed to get public servers", zap.Error(err))
+		return nil, status.Error(codes.Internal, "Failed to get servers")
+	}
+
+	if servers == nil {
+		return &pbapi.ServerList{
+			Servers: []*pbapi.Server{},
+		}, nil
+	}
+
+	cs := make([]*pbapi.Server, 0)
+	for _, server := range servers {
+		cs = append(cs, server.Proto())
+	}
+
+	return &pbapi.ServerList{
+		Servers: cs,
+	}, nil
+}
+```
+
+### GetServer
+
+Retrieve detailed information about a specific server by ID.
+
+**Endpoint:** `ServerBrowserServer.GetServer`
+
+**Request:**
+
+<ParamField body="id" type="string" required>
+  Server ID to retrieve
+</ParamField>
+
+**Response:**
+
+<ResponseField name="server" type="Server" required>
+  Detailed server information including configuration, current map, players, and mods
+</ResponseField>
+
+**Error Codes:**
+
+- `NOT_FOUND` - Server with the specified ID does not exist
+- `INTERNAL` - Failed to retrieve server from database
+
+**Implementation:**
+
+```go source/API/internal/rpc/server_browser.go:305-317
+func (s *ServerBrowserServer) GetServer(ctx context.Context, req *pbapi.ServerRequest) (*pbapi.Server, error) {
+	server, err := s.store.Servers.GetByID(ctx, req.GetId())
+	if err != nil {
+		logger.L().Error("Failed to get server", zap.Error(err))
+		return nil, status.Error(codes.Internal, "Failed to get server")
+	}
+
+	if server == nil {
+		return nil, status.Error(codes.NotFound, "Server not found")
+	}
+
+	return server.Proto(), nil
+}
+```
+
+### RegisterServer
+
+Register a new game server with the server browser.
+
+**Endpoint:** `ServerBrowserServer.RegisterServer`
+
+**Request:**
+
+<ParamField body="name" type="string" required>
+  Server name (max 32 characters, profanity filtered)
+</ParamField>
+
+<ParamField body="description" type="string">
+  Server description (max 128 characters, profanity filtered)
+</ParamField>
+
+<ParamField body="max_players" type="int32" required>
+  Maximum number of players (1-64)
+</ParamField>
+
+<ParamField body="password" type="string">
+  Optional server password for private servers
+</ParamField>
+
+<ParamField body="region" type="Region" required>
+  Server region (NA_WEST, NA_EAST, EU_WEST, EU_CENTRAL, ASIA, OCEANIA)
+</ParamField>
+
+<ParamField body="mods" type="ModInfo[]">
+  List of required mods with name and hash
+</ParamField>
+
+<ParamField body="tags" type="string[]">
+  Server tags for filtering
+</ParamField>
+
+**Response:**
+
+<ResponseField name="id" type="string" required>
+  Unique server ID
+</ResponseField>
+
+<ResponseField name="token" type="string" required>
+  JWT token for server updates and authentication
+</ResponseField>
+
+**Validation:**
+
+- Server name and description are checked for profanity
+- Name must be 1-32 characters
+- Description must not exceed 128 characters
+- Max players must be between 1 and 64
+- User cannot have more than 10 active servers
+
+### UpdateServer
+
+Update an existing server's status, players, and current map.
+
+**Endpoint:** `ServerBrowserServer.UpdateServer`
+
+**Request:**
+
+<ParamField body="id" type="string" required>
+  Server ID to update
+</ParamField>
+
+<ParamField body="current_players" type="int32">
+  Current number of players
+</ParamField>
+
+<ParamField body="players" type="Player[]">
+  List of connected players with names and IDs
+</ParamField>
+
+<ParamField body="current_map" type="LevelSetup">
+  Current map and game mode information
+</ParamField>
+
+<ParamField body="next_map" type="LevelSetup">
+  Next map in rotation
+</ParamField>
+
+**Authorization:**
+
+User must be the owner of the server or have appropriate permissions.
+
+**Implementation:**
+
+Servers are automatically marked as stale and removed if they don't send updates within 40 seconds. A background cleanup process runs every 10 seconds.
+
+### CanJoinServer
+
+Validate whether a player can join a server based on mod compatibility and server status.
+
+**Endpoint:** `ServerBrowserServer.CanJoinServer`
+
+**Request:**
+
+<ParamField body="server_id" type="string" required>
+  Server ID to validate
+</ParamField>
+
+<ParamField body="mods" type="ModInfo[]">
+  Player's installed mods
+</ParamField>
+
+**Response:**
+
+<ResponseField name="can_join" type="bool" required>
+  Whether the player can join the server
+</ResponseField>
+
+<ResponseField name="reason" type="string">
+  Reason for denial if can_join is false
+</ResponseField>
+
+<ResponseField name="missing_mods" type="ModInfo[]">
+  Mods required by the server that the player doesn't have
+</ResponseField>
+
+**Validation Logic:**
+
+- Checks if server exists and is not full
+- Validates mod compatibility (all required mods must be installed)
+- Returns list of missing mods for download
+
+## Mod Management
+
+### CheckModImages
+
+Check which mod images need to be uploaded for proper server display.
+
+**Endpoint:** `ServerBrowserServer.CheckModImages`
+
+**Request:**
+
+<ParamField body="mods" type="ModImageMod[]" required>
+  List of mods with names and hashes to check
+</ParamField>
+
+**Response:**
+
+<ResponseField name="missing" type="string[]" required>
+  Array of mod hashes that don't have images uploaded
+</ResponseField>
+
+### UploadModImages
+
+Upload preview images for mods to display in the server browser.
+
+**Endpoint:** `ServerBrowserServer.UploadModImages`
+
+**Request:**
+
+<ParamField body="images" type="ModImage[]" required>
+  Array of mod images with hash and base64-encoded image data
+</ParamField>
+
+**Validation:**
+
+- Images must be valid base64-encoded data
+- Supports jpg, jpeg, png, webp formats
+- Images are stored in S3/R2 for serving
+
+## Real-Time Updates
+
+Server status updates are published to WebSocket clients for real-time server browser updates. Updates include:
+
+- Player count changes
+- Map rotations
+- Server online/offline status
+- New servers registered
+
+## Background Tasks
+
+### Stale Server Cleanup
+
+A background process runs every 10 seconds to remove stale servers:
+
+- Servers that haven't sent an update in 40 seconds are marked as stale
+- Stale servers are automatically removed from the browser
+- This ensures the browser only shows active servers
+
+```go source/API/internal/rpc/server_browser.go:39-80
+func (s *ServerBrowserServer) cleanupStaleServers() {
+	for {
+		ticker := time.NewTicker(10 * time.Second)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			cutoff := time.Now().Add(-40 * time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			servers, err := s.store.Servers.GetWithCutoff(ctx, cutoff)
+			// ... cleanup logic
+		}
+	}
+}
+```
+
+## Error Codes
+
+- `INTERNAL` - Database or internal server error
+- `NOT_FOUND` - Server ID not found
+- `PERMISSION_DENIED` - User doesn't own the server
+- `INVALID_ARGUMENT` - Validation failed (profanity, invalid values)
+
+## Integration
+
+### Server Host Flow
+
+1. **Register Server:** Call `RegisterServer()` with server details
+2. **Store Token:** Save the returned JWT token for updates
+3. **Send Updates:** Call `UpdateServer()` every 30 seconds with current status
+4. **Handle Shutdown:** Server is automatically removed after 40 seconds without updates
+
+### Player Join Flow
+
+1. **List Servers:** Call `GetServers()` to get all available servers
+2. **Filter/Search:** Apply client-side filtering based on region, game mode, etc.
+3. **Validate Join:** Call `CanJoinServer()` to check mod compatibility
+4. **Download Mods:** If missing mods, prompt user to download
+5. **Join Server:** Connect to server using returned connection details
+
+## Related APIs
+
+<CardGroup cols={2}>
+  <Card title="Server Management" icon="shield" href="/api/server-management">
+    Player management and moderation
+  </Card>
+  <Card title="VoIP" icon="microphone" href="/api/voip">
+    Voice chat integration for servers
+  </Card>
+</CardGroup>
+
+## Implementation Notes
+
+- Server IDs are UUID v4 strings
+- Servers are stored in MongoDB with real-time indexing
+- WebSocket connections receive real-time updates via RabbitMQ
+- Map images are fetched from S3/R2 CDN based on mod hashes
+- Profanity filtering uses the go-away library

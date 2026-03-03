@@ -1,0 +1,394 @@
+---
+title: "Reports API"
+description: "Player reporting system for managing community behavior and moderation"
+---
+
+The Reports API provides endpoints for the player reporting system. Players can report others for misconduct, and moderators can review, approve, or reject reports. The system includes evidence upload, status tracking, and automated notifications.
+
+## Overview
+
+Kyber's reporting system allows players to report inappropriate behavior, cheating, or rule violations. Reports can include text descriptions, evidence links, and uploaded media. Moderators review reports and can approve punishments or reject false reports.
+
+<Info>
+Players are limited to 6 open reports at a time, with a maximum of 2 reports per target player.
+</Info>
+
+## Player Methods
+
+### CreateReport
+
+Submit a new report against a player.
+
+**Endpoint:** `ReportServiceServer.CreateReport`
+
+**Authentication:** Required
+
+**Request:**
+
+<ParamField body="report" type="Report" required>
+  Report details object
+</ParamField>
+
+<ParamField body="report.reported_player_id" type="string" required>
+  ID of the player being reported
+</ParamField>
+
+<ParamField body="report.reason" type="ReportReason" required>
+  Reason for the report (CHEATING, HARASSMENT, TOXICITY, EXPLOITING, etc.)
+</ParamField>
+
+<ParamField body="report.description" type="string" required>
+  Detailed description of the incident
+</ParamField>
+
+<ParamField body="report.evidence_links" type="string[]">
+  URLs to external evidence (videos, screenshots)
+</ParamField>
+
+<ParamField body="report.evidence_ids" type="string[]">
+  S3 evidence file IDs from GenerateEvidenceLinks
+</ParamField>
+
+**Response:**
+
+<ResponseField name="empty" type="Empty">
+  Empty response on success
+</ResponseField>
+
+**Error Codes:**
+
+- `INVALID_ARGUMENT` - Report data is invalid or evidence links are malformed
+- `NOT_FOUND` - Reported player ID does not exist
+- `RESOURCE_EXHAUSTED` - Maximum open reports reached (6 total or 2 for this player)
+- `INTERNAL` - Database or queue error
+
+**Validation:**
+
+- User can have maximum 6 open reports
+- User can have maximum 2 open reports for the same target player
+- Evidence links must be valid URLs
+- Reported player must exist in the system
+
+**Implementation:**
+
+```go source/API/internal/rpc/report.go:416-491
+func (s *ReportServiceServer) CreateReport(ctx context.Context, req *pbapi.CreateReportRequest) (*pbcommon.Empty, error) {
+	user := ctx.Value("user").(*models.UserModel)
+
+	openReports, err := s.store.Reports.GetNewReportsByUserID(ctx, user.ID)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "Failed to get open reports")
+	}
+
+	if len(openReports) >= 6 {
+		return nil, status.Error(codes.ResourceExhausted, "You have reached the maximum number of open reports")
+	}
+
+	openReportsForTarget := 0
+	for _, report := range openReports {
+		if report.ReportedPlayerID == req.Report.ReportedPlayerId {
+			openReportsForTarget++
+		}
+	}
+
+	if openReportsForTarget >= 2 {
+		return nil, status.Error(codes.ResourceExhausted, "You have reached the maximum number of open reports for this player")
+	}
+
+	// Create report and publish to RabbitMQ for processing
+	reportModel := models.ReportModel{
+		ID:               util.GenerateShortToken(),
+		ReportedPlayerID: report.ReportedPlayerId,
+		ReporterID:       user.ID,
+		Description:      report.Description,
+		EvidenceLinks:    report.EvidenceLinks,
+		Reason:           models.GetReportReasonFromProto(report.Reason),
+		Status:           models.ReportStatusNew,
+		S3EvidenceIDs:    report.GetEvidenceIds(),
+	}
+
+	// ... create report and publish to queue
+}
+```
+
+### GetUserReports
+
+Retrieve all reports filed by or against the authenticated user.
+
+**Endpoint:** `ReportServiceServer.GetUserReports`
+
+**Authentication:** Required
+
+**Request:**
+
+<ParamField body="request" type="GetReportRequest">
+  Empty request object
+</ParamField>
+
+**Response:**
+
+<ResponseField name="reports" type="Report[]" required>
+  Array of reports involving the user (as reporter or target)
+</ResponseField>
+
+### GenerateEvidenceLinks
+
+Generate pre-signed upload URLs for evidence files (images/videos).
+
+**Endpoint:** `ReportServiceServer.GenerateEvidenceLinks`
+
+**Authentication:** Required
+
+**Request:**
+
+<ParamField body="files" type="EvidenceFile[]" required>
+  Array of evidence files with extension and content type
+</ParamField>
+
+<ParamField body="files[].extension" type="string" required>
+  File extension (jpg, jpeg, png, webp, mp4)
+</ParamField>
+
+<ParamField body="files[].content_type" type="string" required>
+  MIME type (image/jpeg, video/mp4, etc.)
+</ParamField>
+
+**Response:**
+
+<ResponseField name="links" type="EvidenceUploadLink[]" required>
+  Pre-signed upload URLs and file IDs
+</ResponseField>
+
+<ResponseField name="links[].id" type="string" required>
+  Unique file ID to include in CreateReport
+</ResponseField>
+
+<ResponseField name="links[].upload_url" type="string" required>
+  Pre-signed S3 URL for direct upload
+</ResponseField>
+
+**Supported Formats:**
+
+- Images: jpg, jpeg, png, webp
+- Videos: mp4
+
+**Upload Flow:**
+
+1. Call `GenerateEvidenceLinks` with file metadata
+2. Upload files directly to the returned pre-signed URLs
+3. Include the file IDs in `CreateReport.evidence_ids`
+
+## Moderator Methods
+
+<Warning>
+The following methods require staff permissions (`EntitlementStaff`).
+</Warning>
+
+### ListReports
+
+Retrieve all reports for moderator review.
+
+**Endpoint:** `ReportServiceServer.ListReports`
+
+**Authorization:** Staff only
+
+**Response:**
+
+<ResponseField name="reports" type="Report[]" required>
+  All reports with full details, evidence, and status
+</ResponseField>
+
+### SearchUser
+
+Search for a user by username or email for reporting/moderation.
+
+**Endpoint:** `ReportServiceServer.SearchUser`
+
+**Authorization:** Staff only
+
+**Request:**
+
+<ParamField body="query" type="string" required>
+  Search query (username or email)
+</ParamField>
+
+**Response:**
+
+<ResponseField name="users" type="UserInfo[]" required>
+  Matching users with ID, username, and basic info
+</ResponseField>
+
+### GetUserInfo
+
+Retrieve detailed information about a user including moderation history.
+
+**Endpoint:** `ReportServiceServer.GetUserInfo`
+
+**Authorization:** Staff only
+
+**Request:**
+
+<ParamField body="user_id" type="string" required>
+  User ID to retrieve information for
+</ParamField>
+
+**Response:**
+
+<ResponseField name="user" type="UserInfo" required>
+  User details including reports, punishments, and account status
+</ResponseField>
+
+### ApproveReports
+
+Approve multiple reports and apply punishments to the reported player.
+
+**Endpoint:** `ReportServiceServer.ApproveReports`
+
+**Authorization:** Staff only
+
+**Request:**
+
+<ParamField body="report_ids" type="string[]" required>
+  Array of report IDs to approve
+</ParamField>
+
+<ParamField body="note" type="string" required>
+  Moderator note explaining the decision
+</ParamField>
+
+<ParamField body="punishment" type="Punishment" required>
+  Punishment to apply (ban, warning, etc.)
+</ParamField>
+
+**Effects:**
+
+- Marks reports as approved
+- Creates punishment record
+- Adds moderator note to all reports
+- Notifies reporters of outcome
+- Applies punishment to target player
+
+### RejectReport
+
+Reject a report as invalid or unsubstantiated.
+
+**Endpoint:** `ReportServiceServer.RejectReport`
+
+**Authorization:** Staff only
+
+**Request:**
+
+<ParamField body="report_id" type="string" required>
+  Report ID to reject
+</ParamField>
+
+<ParamField body="note" type="string" required>
+  Moderator note explaining the rejection
+</ParamField>
+
+**Effects:**
+
+- Marks report as rejected
+- Adds moderator note
+- Notifies reporter
+
+### UpdateStatus
+
+Update the status of a report (in review, pending, etc.).
+
+**Endpoint:** `ReportServiceServer.UpdateStatus`
+
+**Authorization:** Staff only
+
+**Request:**
+
+<ParamField body="report_id" type="string" required>
+  Report ID to update
+</ParamField>
+
+<ParamField body="status" type="ReportStatus" required>
+  New status (NEW, IN_REVIEW, PENDING, APPROVED, REJECTED)
+</ParamField>
+
+<ParamField body="note" type="string">
+  Optional moderator note
+</ParamField>
+
+## Report Statuses
+
+Reports progress through the following statuses:
+
+- `NEW` - Just submitted, awaiting moderator review
+- `IN_REVIEW` - Moderator is actively reviewing
+- `PENDING` - Awaiting additional information or action
+- `APPROVED` - Report validated and punishment applied
+- `REJECTED` - Report dismissed as invalid
+
+## Report Reasons
+
+Players can select from predefined report reasons:
+
+- `CHEATING` - Use of hacks, aimbots, or unfair advantages
+- `HARASSMENT` - Targeted harassment or bullying
+- `TOXICITY` - Toxic behavior, hate speech, or slurs
+- `EXPLOITING` - Exploiting game bugs or glitches
+- `GRIEFING` - Intentional disruption of gameplay
+- `OTHER` - Other rule violations
+
+## Evidence Storage
+
+Evidence files are stored in S3/R2 with the following workflow:
+
+1. **Generate Upload URLs:** `GenerateEvidenceLinks` creates pre-signed S3 URLs
+2. **Direct Upload:** Client uploads files directly to S3 (bypasses API server)
+3. **Reference in Report:** File IDs are included in the report
+4. **Moderator Access:** Moderators can view evidence when reviewing reports
+
+**Storage Details:**
+
+- Bucket: Configured via `R2_BUCKET_NAME` environment variable
+- Access: Pre-signed URLs valid for limited time
+- Allowed formats: jpg, jpeg, png, webp, mp4
+- Files are associated with reports via ID references
+
+## Integration
+
+### Player Report Flow
+
+1. **Open Report Dialog:** Player selects "Report" on another player
+2. **Fill Details:** Select reason and provide description
+3. **Upload Evidence (Optional):**
+   - Call `GenerateEvidenceLinks` for each file
+   - Upload files to returned URLs
+4. **Submit Report:** Call `CreateReport` with evidence IDs
+5. **Track Status:** Use `GetUserReports` to monitor report status
+
+### Moderator Review Flow
+
+1. **List Pending Reports:** Call `ListReports` to get all reports
+2. **Review Evidence:** Access evidence links and uploaded files
+3. **Investigate:** Use `SearchUser` and `GetUserInfo` for context
+4. **Take Action:**
+   - Approve: Call `ApproveReports` with punishment
+   - Reject: Call `RejectReport` with explanation
+5. **Add Notes:** Use `UpdateStatus` to add progress notes
+
+## Related APIs
+
+<CardGroup cols={2}>
+  <Card title="Server Management" icon="shield" href="/api/server-management">
+    Apply bans and kicks from approved reports
+  </Card>
+  <Card title="Authentication" icon="key" href="/api/authentication">
+    User account management
+  </Card>
+</CardGroup>
+
+## Implementation Notes
+
+- Report IDs are generated using `util.GenerateShortToken()` for easy reference
+- Reports are queued in RabbitMQ for asynchronous processing
+- Evidence upload uses pre-signed URLs to avoid API server bottlenecks
+- Moderator actions are logged with timestamps and user IDs
+- Reports create WebSocket notifications for real-time updates
+- S3 storage configured via environment variables (`R2_HOST`, `R2_ACCESS_KEY`, `R2_SECRET_KEY`, `R2_BUCKET_NAME`)

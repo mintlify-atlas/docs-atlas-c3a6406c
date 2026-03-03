@@ -1,0 +1,193 @@
+---
+title: "VoIP API"
+description: "Voice chat integration using Vivox for proximity-based communication"
+---
+
+The VoIP API provides endpoints for integrating with Kyber's proximity voice chat system powered by Vivox. This API handles authentication and channel management for voice communication.
+
+## Overview
+
+Kyber uses Vivox for spatial audio and proximity voice chat. The VoIP API generates authentication tokens and channel access credentials for players to join voice channels associated with game servers.
+
+<Info>
+All VoIP endpoints require authentication with a valid Kyber token.
+</Info>
+
+## Methods
+
+### Login
+
+Generate Vivox authentication credentials for a user.
+
+**Endpoint:** `VoipServer.Login`
+
+**Request:**
+
+<ParamField body="empty" type="Empty">
+  No parameters required. User information is extracted from the authentication context.
+</ParamField>
+
+**Response:**
+
+<ResponseField name="token" type="string" required>
+  Vivox authentication token for the user
+</ResponseField>
+
+<ResponseField name="username" type="string" required>
+  Vivox username (generated from user's display name)
+</ResponseField>
+
+<ResponseField name="display_name" type="string" required>
+  User's display name for voice chat
+</ResponseField>
+
+<ResponseField name="issuer" type="string" required>
+  Vivox issuer identifier
+</ResponseField>
+
+<ResponseField name="domain" type="string" required>
+  Vivox domain for the voice service
+</ResponseField>
+
+**Implementation:**
+
+```go source/API/internal/rpc/voip.go:32-44
+func (s *VoipServer) Login(ctx context.Context, req *pbcommon.Empty) (*pbapi.VoipLoginResponse, error) {
+	user := ctx.Value("user").(*models.UserModel)
+
+	username := s.tokenGen.Username(user.Name)
+	token := s.tokenGen.Generate("login", s.tokenGen.UserURI(username), nil)
+	return &pbapi.VoipLoginResponse{
+		Token:       token,
+		Username:    username,
+		DisplayName: user.Name,
+		Issuer:      s.tokenGen.Issuer,
+		Domain:      s.tokenGen.Domain,
+	}, nil
+}
+```
+
+**Example Usage:**
+
+```protobuf
+// Request
+message Empty {}
+
+// Response
+message VoipLoginResponse {
+  string token = 1;
+  string username = 2;
+  string display_name = 3;
+  string issuer = 4;
+  string domain = 5;
+}
+```
+
+### JoinChannel
+
+Generate access credentials for joining a server's voice channel.
+
+**Endpoint:** `VoipServer.JoinChannel`
+
+**Request:**
+
+<ParamField body="server" type="string" required>
+  Server ID to join the voice channel for
+</ParamField>
+
+**Response:**
+
+<ResponseField name="channel" type="string" required>
+  Vivox channel URI for the positional audio channel
+</ResponseField>
+
+<ResponseField name="access_token" type="string" required>
+  Access token for joining the channel
+</ResponseField>
+
+**Implementation:**
+
+```go source/API/internal/rpc/voip.go:46-67
+func (s *VoipServer) JoinChannel(ctx context.Context, req *pbapi.VoipJoinChannelRequest) (*pbapi.VoipJoinChannelResponse, error) {
+	user := ctx.Value("user").(*models.UserModel)
+
+	server, err := s.store.Servers.GetByID(ctx, req.GetServer())
+	if err != nil {
+		logger.L().Error("Failed to get server by ID", zap.Error(err))
+		return nil, status.Error(codes.Internal, "Failed to get server by ID")
+	}
+
+	if server == nil {
+		return nil, status.Error(codes.Internal, "Server not found")
+	}
+
+	username := s.tokenGen.Username(user.Name)
+	channelUri := s.tokenGen.PositionalChannelURI(server.ID, 80, 1, 1, 1)
+	token := s.tokenGen.Generate("join", s.tokenGen.UserURI(username), &channelUri)
+
+	return &pbapi.VoipJoinChannelResponse{
+		Channel:     channelUri,
+		AccessToken: token,
+	}, nil
+}
+```
+
+**Error Codes:**
+
+- `INTERNAL` - Failed to retrieve server information or server not found
+
+**Channel Configuration:**
+
+The positional channel is created with the following parameters:
+- **Distance**: 80 units (maximum hearing distance)
+- **Rolloff**: 1 (linear distance attenuation)
+- **Max Range**: 1 (normalized)
+- **Clamping Distance**: 1
+
+## Authentication
+
+All VoIP endpoints require a valid Kyber authentication token passed in the gRPC context. The user model is extracted from the context:
+
+```go
+user := ctx.Value("user").(*models.UserModel)
+```
+
+## Integration
+
+### Client Integration Flow
+
+1. **Login to VoIP:**
+   - Call `Login()` after authenticating with Kyber
+   - Store the returned credentials (token, issuer, domain)
+
+2. **Join Server Channel:**
+   - Call `JoinChannel(server_id)` when joining a game server
+   - Use the returned channel URI and access token to connect to Vivox
+
+3. **Spatial Audio:**
+   - Update player position in the Vivox SDK
+   - Proximity-based audio is handled automatically by Vivox
+
+### Token Generation
+
+Tokens are generated using the Vivox token generator with:
+- User URI: `sip:.{username}.{issuer}.@{domain}`
+- Channel URI: `sip:confctl-p-{server_id}.{issuer}@{domain}`
+
+## Related Features
+
+<CardGroup cols={2}>
+  <Card title="Voice Chat Feature" icon="microphone" href="/features/voice-chat">
+    User guide for proximity voice chat
+  </Card>
+  <Card title="Server Browser" icon="server" href="/api/server-browser">
+    API for browsing and joining servers
+  </Card>
+</CardGroup>
+
+## Implementation Notes
+
+- VoIP tokens are generated on-demand and do not persist
+- Each server has its own positional channel for spatial audio
+- The Vivox service is configured with environment variables for issuer and domain
+- Channel URIs use the server ID to ensure unique channels per game server
